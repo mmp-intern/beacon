@@ -35,7 +35,7 @@ public class Commute extends BaseEntity {
 
     @PrePersist
     public void onPrePersist() {
-        this.startedAt = this.getCreatAt();
+        this.startedAt = this.getCreateAt();
     }
 
     @PreUpdate
