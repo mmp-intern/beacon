@@ -1,5 +1,6 @@
 package com.mmp.beacon.gateway.domain;
 
+import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.global.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -17,6 +18,11 @@ public class Gateway extends BaseEntity {
     @Column(name = "gateway_no")
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_no", nullable = false)
+    private Company company;
+
     @Column(name = "gateway_name", length = 50, nullable = false)
     private String name;
+
 }

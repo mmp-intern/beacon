@@ -1,6 +1,7 @@
 package com.mmp.beacon.beacon.domain;
 
 import com.mmp.beacon.global.domain.BaseEntity;
+import com.mmp.beacon.user.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,6 +17,10 @@ public class Beacon extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "beacon_no")
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_no", nullable = false)
+    private User user;
 
     @Column(name = "beacon_mac_addr", length = 50, unique = true, nullable = false)
     private String macAddr;

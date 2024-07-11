@@ -1,6 +1,7 @@
 package com.mmp.beacon.commute.domain;
 
 import com.mmp.beacon.global.domain.BaseEntity;
+import com.mmp.beacon.user.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,6 +19,10 @@ public class Commute extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "commute_no")
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_no", nullable = false)
+    private User user;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;

@@ -1,8 +1,7 @@
 package com.mmp.beacon.user.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import com.mmp.beacon.company.domain.Company;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,6 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @DiscriminatorValue("USER")
 public class User extends AbstractUser {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_no", nullable = false)
+    private Company company;
 
     @Column(name = "user_name", nullable = false)
     private String name;
