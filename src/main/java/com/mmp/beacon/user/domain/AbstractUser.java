@@ -19,7 +19,7 @@ public abstract class AbstractUser extends BaseEntity {
     @Column(name = "user_no")
     private Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(name = "user_id", nullable = false, unique = true, length = 50)
     private String userId;
 
     @Column(name = "password", nullable = false)
