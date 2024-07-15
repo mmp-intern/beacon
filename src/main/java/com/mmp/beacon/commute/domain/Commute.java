@@ -33,6 +33,10 @@ public class Commute extends BaseEntity {
     @Column(name = "commute_ended_at", nullable = false)
     private LocalDateTime endedAt;
 
+    @Column(name = "attendance_status")
+    @Enumerated(EnumType.STRING)
+    private AttendanceStatus attendanceStatus;
+
     @PrePersist
     public void onPrePersist() {
         this.startedAt = this.getCreateAt();
