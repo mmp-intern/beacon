@@ -15,4 +15,9 @@ public class Admin extends AbstractUser {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_no", nullable = false)
     private Company company;
+
+    public Admin(String userId, String password, String email, String sex, String position, Company company) {
+        super(userId, password, UserRole.ADMIN, email, sex, position);
+        this.company = company;
+    }
 }
