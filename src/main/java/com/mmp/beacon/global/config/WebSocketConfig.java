@@ -2,8 +2,6 @@ package com.mmp.beacon.global.config;
 
 import com.mmp.beacon.communication.application.handler.BeaconWebSocketHandler;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
