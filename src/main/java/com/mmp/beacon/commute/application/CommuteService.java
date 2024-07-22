@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -174,6 +176,30 @@ public class CommuteService {
                 .attendanceStatus(AttendanceStatus.LATE)
                 .workStatus(WorkStatus.OUT_OFF_OFFICE)
                 .build());
+    }
+
+    /**
+     * 오늘의 퇴근/자리 비움을 기록합니다.
+     * 오늘이 근무일이 아닌 경우 로그를 남기고 처리를 중단합니다.
+     * 모든 사용자를 조회하여 출퇴근 기록이 존재하고, 근무 중이면서 일정 시간동안 비콘이 감지되지 않은 경우를 기록합니다.
+     * 이 메소드는 스케줄러에 의해 주기적으로 호출됩니다.
+     */
+    @Transactional
+    public void markLeaveOrOutOffice() {
+        if (isWeekend()) {
+            log.info("오늘은 근무일이 아니어서 퇴근 처리를 중단합니다.");
+            return;
+        }
+        userRepository.findAll().forEach(user -> {
+            commuteRepository.findByUserAndDate(user, LocalDate.now())
+                    .ifPresent(commute -> {
+                        if (commute.getWorkStatus() == WorkStatus.IN_OFFICE &&
+                                LocalDateTime.now().minusMinutes(5).isAfter(commute.getEndedAt().atDate(LocalDate.now()))) {
+                            commute.updateWorkStatus(WorkStatus.OUT_OFF_OFFICE);
+                            commuteRepository.save(commute);
+                        }
+                    });
+        });
     }
 
     /**
