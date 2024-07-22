@@ -168,6 +168,7 @@ public class CommuteService {
     private void markLateArrival(User user) {
         commuteRepository.save(Commute.builder()
                 .user(user)
+                .date(LocalDate.now())
                 .startedAt(null)
                 .endedAt(null)
                 .attendanceStatus(AttendanceStatus.LATE)
