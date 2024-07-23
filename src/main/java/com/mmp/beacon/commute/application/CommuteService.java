@@ -31,6 +31,7 @@ public class CommuteService {
     private final UserRepository userRepository;
     private final CommuteRepository commuteRepository;
     private final BeaconRepository beaconRepository;
+    private final TimeService timeService;
 
     /**
      * 주어진 게이트웨이 MAC 주소와 비콘 데이터 리스트를 사용하여 근태 관리를 수행합니다.
@@ -87,7 +88,7 @@ public class CommuteService {
      * @param beaconData 비콘 데이터
      */
     private void processBeaconData(User user, BeaconData beaconData) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = timeService.nowDate();
         commuteRepository.findByUserAndDate(user, today)
                 .ifPresentOrElse(
                         commute -> handleExistingCommute(commute, beaconData),
@@ -156,7 +157,7 @@ public class CommuteService {
             log.info("오늘은 근무일이 아니어서 지각 처리를 중단합니다.");
             return;
         }
-        LocalDate today = LocalDate.now();
+        LocalDate today = timeService.nowDate();
         userRepository.findByCompanyId(companyId).stream()
                 .filter(user -> commuteRepository.findByUserAndDate(user, today).isEmpty())
                 .forEach(this::markLateArrival);
@@ -171,7 +172,7 @@ public class CommuteService {
     private void markLateArrival(User user) {
         commuteRepository.save(Commute.builder()
                 .user(user)
-                .date(LocalDate.now())
+                .date(timeService.nowDate())
                 .startedAt(null)
                 .endedAt(null)
                 .attendanceStatus(AttendanceStatus.LATE)
@@ -191,10 +192,12 @@ public class CommuteService {
             log.info("오늘은 근무일이 아니어서 퇴근 처리를 중단합니다.");
             return;
         }
-        userRepository.findAll().forEach(user -> commuteRepository.findByUserAndDate(user, LocalDate.now())
+        LocalDate today = timeService.nowDate();
+        LocalDateTime nowMinus5Minutes = timeService.nowDateTime().minusMinutes(5);
+        userRepository.findAll().forEach(user -> commuteRepository.findByUserAndDate(user, today)
                 .ifPresent(commute -> {
                     if (commute.getWorkStatus() == WorkStatus.IN_OFFICE &&
-                            LocalDateTime.now().minusMinutes(5).isAfter(commute.getEndedAt().atDate(LocalDate.now()))) {
+                            nowMinus5Minutes.isAfter(commute.getEndedAt().atDate(today))) {
                         commute.updateWorkStatus(WorkStatus.OUT_OFF_OFFICE);
                         commuteRepository.save(commute);
                     }
@@ -213,7 +216,7 @@ public class CommuteService {
             log.info("오늘은 근무일이 아니어서 결근 처리를 중단합니다.");
             return;
         }
-        LocalDate today = LocalDate.now();
+        LocalDate today = timeService.nowDate();
         userRepository.findByCompanyId(companyId).stream()
                 .map(user -> commuteRepository.findByUserAndDate(user, today))
                 .filter(Optional::isPresent)
@@ -240,7 +243,7 @@ public class CommuteService {
      * @return 오늘이 근무일이면 true, 아니면 false
      */
     private boolean isWeekend() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = timeService.nowDate();
         DayOfWeek dayOfWeek = today.getDayOfWeek();
         return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
     }
