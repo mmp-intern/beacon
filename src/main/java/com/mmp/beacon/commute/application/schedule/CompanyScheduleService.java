@@ -1,6 +1,7 @@
 package com.mmp.beacon.commute.application.schedule;
 
 import com.mmp.beacon.commute.application.CommuteService;
+import com.mmp.beacon.commute.application.TimeService;
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class CompanyScheduleService implements ScheduleService {
 
     private final TaskScheduler taskScheduler;
     private final CommuteService commuteService;
+    private final TimeService timeService;
     private final CompanyRepository companyRepository;
 
     /**
@@ -60,7 +62,7 @@ public class CompanyScheduleService implements ScheduleService {
      * @param task 실행할 작업
      */
     private void scheduleTask(LocalTime time, Runnable task) {
-        Trigger trigger = createTrigger(LocalDateTime.now().with(time));
+        Trigger trigger = createTrigger(timeService.nowDateTime().with(time));
         taskScheduler.schedule(task, trigger);
     }
 
