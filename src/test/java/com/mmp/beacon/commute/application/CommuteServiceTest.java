@@ -140,4 +140,46 @@ class CommuteServiceTest {
         assertEquals(AttendanceStatus.PRESENT, commute4.getAttendanceStatus());
         assertEquals(WorkStatus.IN_OFFICE, commute4.getWorkStatus());
     }
+
+    @Test
+    @DisplayName("주어진 회사 ID로 지각자를 기록한다.")
+    void testMarkLateArrivals() {
+        // Given
+        Long companyId = 1L;
+        User user1 = mock(User.class);
+        User user2 = mock(User.class);
+        Company company = mock(Company.class);
+
+        when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
+        when(userRepository.findByCompanyId(companyId)).thenReturn(List.of(user1, user2));
+        when(commuteRepository.findByUserAndDate(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.empty());
+        when(commuteRepository.findByUserAndDate(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.empty());
+        when(user1.getCompany()).thenReturn(company);
+        when(user2.getCompany()).thenReturn(company);
+        when(company.getStartTime()).thenReturn(LocalTime.of(9, 0));
+
+        // When
+        commuteService.markLateArrivals(companyId);
+
+        // Then
+        verify(commuteRepository, times(2)).save(commuteCapture.capture());
+        List<Commute> savedCommutes = commuteCapture.getAllValues();
+
+        // Assert each saved Commute
+        Commute commute1 = savedCommutes.get(0);
+        assertEquals(user1, commute1.getUser());
+        assertEquals(LocalDate.of(2024, 7, 23), commute1.getDate());
+        assertNull(commute1.getStartedAt());
+        assertNull(commute1.getEndedAt());
+        assertEquals(AttendanceStatus.LATE, commute1.getAttendanceStatus());
+        assertEquals(WorkStatus.OUT_OFF_OFFICE, commute1.getWorkStatus());
+
+        Commute commute2 = savedCommutes.get(1);
+        assertEquals(user2, commute2.getUser());
+        assertEquals(LocalDate.of(2024, 7, 23), commute2.getDate());
+        assertNull(commute2.getStartedAt());
+        assertNull(commute2.getEndedAt());
+        assertEquals(AttendanceStatus.LATE, commute2.getAttendanceStatus());
+        assertEquals(WorkStatus.OUT_OFF_OFFICE, commute2.getWorkStatus());
+    }
 }
