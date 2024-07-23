@@ -263,4 +263,44 @@ class CommuteServiceTest {
         assertEquals(AttendanceStatus.PRESENT, updatedCommute.getAttendanceStatus());
         assertEquals(WorkStatus.OUT_OFF_OFFICE, updatedCommute.getWorkStatus());
     }
+
+    @Test
+    @DisplayName("주어진 회사 ID로 결근자를 기록한다.")
+    void testMarkAbsentees() {
+        // Given
+        Long companyId = 1L;
+        User user1 = mock(User.class);
+        User user2 = mock(User.class);
+        Commute lateCommute1 = new Commute(user1, LocalDate.of(2024, 7, 23), null, null, AttendanceStatus.LATE, WorkStatus.OUT_OFF_OFFICE);
+        Commute lateCommute2 = new Commute(user2, LocalDate.of(2024, 7, 23), null, null, AttendanceStatus.LATE, WorkStatus.OUT_OFF_OFFICE);
+
+        when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
+        when(userRepository.findByCompanyId(companyId)).thenReturn(List.of(user1, user2));
+        when(commuteRepository.findByUserAndDate(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(lateCommute1));
+        when(commuteRepository.findByUserAndDate(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(lateCommute2));
+
+        // When
+        commuteService.markAbsentees(companyId);
+
+        // Then
+        verify(commuteRepository, times(2)).save(commuteCapture.capture());
+        List<Commute> savedCommutes = commuteCapture.getAllValues();
+
+        // Assert each saved Commute
+        Commute absenteeCommute1 = savedCommutes.get(0);
+        assertEquals(user1, absenteeCommute1.getUser());
+        assertEquals(LocalDate.of(2024, 7, 23), absenteeCommute1.getDate());
+        assertNull(absenteeCommute1.getStartedAt());
+        assertNull(absenteeCommute1.getEndedAt());
+        assertEquals(AttendanceStatus.ABSENT, absenteeCommute1.getAttendanceStatus());
+        assertEquals(WorkStatus.OUT_OFF_OFFICE, absenteeCommute1.getWorkStatus());
+
+        Commute absenteeCommute2 = savedCommutes.get(1);
+        assertEquals(user2, absenteeCommute2.getUser());
+        assertEquals(LocalDate.of(2024, 7, 23), absenteeCommute2.getDate());
+        assertNull(absenteeCommute2.getStartedAt());
+        assertNull(absenteeCommute2.getEndedAt());
+        assertEquals(AttendanceStatus.ABSENT, absenteeCommute2.getAttendanceStatus());
+        assertEquals(WorkStatus.OUT_OFF_OFFICE, absenteeCommute2.getWorkStatus());
+    }
 }
