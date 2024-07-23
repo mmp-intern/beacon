@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Getter
@@ -74,7 +73,7 @@ public class Commute extends BaseEntity {
      * 주어진 출근 시간(earlyTimestamp)이 현재 출근 시간보다 이른 경우, 출근 시간을 갱신합니다.
      * 주어진 퇴근 시간(latestTimestamp)이 현재 퇴근 시간보다 늦은 경우, 퇴근 시간을 갱신합니다.
      *
-     * @param earlyTimestamp 새로운 출근 시간
+     * @param earlyTimestamp  새로운 출근 시간
      * @param latestTimestamp 새로운 퇴근 시간
      */
     public void updateTimestamps(LocalTime earlyTimestamp, LocalTime latestTimestamp) {

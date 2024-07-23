@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -144,19 +143,21 @@ public class CommuteService {
     }
 
     /**
-     * 오늘의 지각자를 기록합니다.
-     * 오늘이 근무일이 아닌 경우 로그를 남기고 처리를 중단합니다.
-     * 모든 사용자를 조회하여 출퇴근 기록이 없는 사용자를 지각자로 기록합니다.
-     * 이 메소드는 스케줄러에 의해 사용자 회사의 출근 시간에 호출됩니다.
+     * 주어진 회사 ID를 사용하여 지각자를 기록합니다.
+     * 오늘이 근무일이 아닌 경우, 로그를 남기고 처리를 중단합니다.
+     * 주어진 회사의 모든 사용자를 조회하여 출퇴근 기록이 없는 사용자를 지각자로 기록합니다.
+     * 이 메서드는 스케줄러에 의해 사용자 회사의 출근 시간에 호출됩니다.
+     *
+     * @param companyId 기록할 회사의 ID
      */
     @Transactional
-    public void markLateArrivals() {
+    public void markLateArrivals(Long companyId) {
         if (isWeekend()) {
             log.info("오늘은 근무일이 아니어서 지각 처리를 중단합니다.");
             return;
         }
         LocalDate today = LocalDate.now();
-        userRepository.findAll().stream()
+        userRepository.findByCompanyId(companyId).stream()
                 .filter(user -> commuteRepository.findByUserAndDate(user, today).isEmpty())
                 .forEach(this::markLateArrival);
     }
@@ -190,32 +191,30 @@ public class CommuteService {
             log.info("오늘은 근무일이 아니어서 퇴근 처리를 중단합니다.");
             return;
         }
-        userRepository.findAll().forEach(user -> {
-            commuteRepository.findByUserAndDate(user, LocalDate.now())
-                    .ifPresent(commute -> {
-                        if (commute.getWorkStatus() == WorkStatus.IN_OFFICE &&
-                                LocalDateTime.now().minusMinutes(5).isAfter(commute.getEndedAt().atDate(LocalDate.now()))) {
-                            commute.updateWorkStatus(WorkStatus.OUT_OFF_OFFICE);
-                            commuteRepository.save(commute);
-                        }
-                    });
-        });
+        userRepository.findAll().forEach(user -> commuteRepository.findByUserAndDate(user, LocalDate.now())
+                .ifPresent(commute -> {
+                    if (commute.getWorkStatus() == WorkStatus.IN_OFFICE &&
+                            LocalDateTime.now().minusMinutes(5).isAfter(commute.getEndedAt().atDate(LocalDate.now()))) {
+                        commute.updateWorkStatus(WorkStatus.OUT_OFF_OFFICE);
+                        commuteRepository.save(commute);
+                    }
+                }));
     }
 
     /**
-     * 오늘의 결근자를 기록합니다.
+     * 주어진 회사의 ID로 결근자를 기록합니다.
      * 오늘이 근무일이 아닌 경우 로그를 남기고 처리를 중단합니다.
-     * 모든 사용자를 조회하여 출퇴근 기록이 존재하고, 지각 상태이며 출근 및 퇴근 시간이 사용자를 결근자로 기록합니다.
+     * 주어진 회사의 모든 사용자를 조회하여 출퇴근 기록이 존재하고, 지각 상태이며 출근 및 퇴근 시간이 없는 사용자를 결근자로 기록합니다.
      * 이 메소드는 스케줄러에 의해 사용자 회사의 퇴근 시간에 호출됩니다.
      */
     @Transactional
-    public void markAbsentees() {
+    public void markAbsentees(Long companyId) {
         if (isWeekend()) {
             log.info("오늘은 근무일이 아니어서 결근 처리를 중단합니다.");
             return;
         }
         LocalDate today = LocalDate.now();
-        userRepository.findAll().stream()
+        userRepository.findByCompanyId(companyId).stream()
                 .map(user -> commuteRepository.findByUserAndDate(user, today))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
