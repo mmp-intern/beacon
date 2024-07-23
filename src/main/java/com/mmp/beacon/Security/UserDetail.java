@@ -2,6 +2,7 @@ package com.mmp.beacon.Security;
 
 import com.mmp.beacon.user.domain.AbstractUser;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
@@ -16,7 +17,7 @@ public class UserDetail implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(() -> abstractUser.getRole().name());
+        return List.of(new SimpleGrantedAuthority(abstractUser.getRole().name()));
     }
 
     @Override
@@ -27,6 +28,10 @@ public class UserDetail implements UserDetails {
     @Override
     public String getUsername() {
         return abstractUser.getUserId();
+    }
+
+    public AbstractUser getUser() {
+        return abstractUser;
     }
 
     public Long getUserId() {

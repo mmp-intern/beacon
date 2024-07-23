@@ -5,6 +5,11 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Entity
@@ -38,7 +43,7 @@ public abstract class AbstractUser extends BaseEntity {
     @Column(name = "position")
     private String position;
 
-    // 생성자
+    /// 생성자
     protected AbstractUser(String userId, String password, UserRole role, String email, String sex, String position) {
         this.userId = userId;
         this.password = password;
@@ -46,5 +51,11 @@ public abstract class AbstractUser extends BaseEntity {
         this.email = email;
         this.sex = sex;
         this.position = position;
+    }
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role.name()));
+    }
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 }

@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -36,4 +37,13 @@ public class User extends AbstractUser {
         this.company = company;
         this.position = position;
     }
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
+
+    @Column(name = "role", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
+
+
 }

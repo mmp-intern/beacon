@@ -11,8 +11,8 @@ public class SecurityUtil {
             Object principal = authentication.getPrincipal();
             if (principal instanceof UserDetail) {
                 return ((UserDetail) principal).getUsername();
-            } else {
-                return principal.toString();
+            } else if (principal instanceof String) {
+                return (String) principal;
             }
         }
         return null;
@@ -24,6 +24,13 @@ public class SecurityUtil {
             Object principal = authentication.getPrincipal();
             if (principal instanceof UserDetail) {
                 return ((UserDetail) principal).getUserId();
+            } else if (principal instanceof String) {
+                try {
+                    return Long.valueOf((String) principal);
+                } catch (NumberFormatException e) {
+                    // principal이 String이지만 숫자가 아닐 경우 null 반환
+                    return null;
+                }
             }
         }
         return null;
