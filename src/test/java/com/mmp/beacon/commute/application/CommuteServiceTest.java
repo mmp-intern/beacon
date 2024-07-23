@@ -236,4 +236,31 @@ class CommuteServiceTest {
         assertEquals(AttendanceStatus.PRESENT, commute2.getAttendanceStatus());
         assertEquals(WorkStatus.IN_OFFICE, commute2.getWorkStatus());
     }
+
+    @Test
+    @DisplayName("퇴근 또는 자리 비움을 기록한다.")
+    void testMarkLeaveOrOutOffice() {
+        // Given
+        User user = mock(User.class);
+        Commute existingCommute = new Commute(user, LocalDate.of(2024, 7, 23), LocalTime.of(9, 0), LocalTime.of(18, 0), AttendanceStatus.PRESENT, WorkStatus.IN_OFFICE);
+
+        when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
+        when(timeService.nowDateTime()).thenReturn(LocalDateTime.of(2024, 7, 23, 18, 6));
+        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(commuteRepository.findByUserAndDate(user, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(existingCommute));
+
+        // When
+        commuteService.markLeaveOrOutOffice();
+
+        // Then
+        verify(commuteRepository, times(1)).save(commuteCapture.capture());
+        Commute updatedCommute = commuteCapture.getValue();
+
+        assertEquals(user, updatedCommute.getUser());
+        assertEquals(LocalDate.of(2024, 7, 23), updatedCommute.getDate());
+        assertEquals(LocalTime.of(9, 0), updatedCommute.getStartedAt());
+        assertEquals(LocalTime.of(18, 0), updatedCommute.getEndedAt());
+        assertEquals(AttendanceStatus.PRESENT, updatedCommute.getAttendanceStatus());
+        assertEquals(WorkStatus.OUT_OFF_OFFICE, updatedCommute.getWorkStatus());
+    }
 }
