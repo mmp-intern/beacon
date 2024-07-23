@@ -182,4 +182,58 @@ class CommuteServiceTest {
         assertEquals(AttendanceStatus.LATE, commute2.getAttendanceStatus());
         assertEquals(WorkStatus.OUT_OFF_OFFICE, commute2.getWorkStatus());
     }
+
+    @Test
+    @DisplayName("주어진 게이트웨이 MAC 주소와 비콘 데이터 리스트를 사용하여 기존 출퇴근 기록이 있는 경우 이를 갱신한다.")
+    void testUpdateExistingCommute() {
+        // Given
+        String gatewayMac = "40D63CD6FD92";
+        BeaconData beaconData1 = new BeaconData("F4741C781187", LocalDateTime.parse("2024-07-23T09:00:00"), LocalDateTime.parse("2024-07-23T09:01:00"));
+        BeaconData beaconData2 = new BeaconData("DE42759B6E12", LocalDateTime.parse("2024-07-23T09:01:00"), LocalDateTime.parse("2024-07-23T09:02:00"));
+
+        Gateway gateway = mock(Gateway.class);
+        Company company = mock(Company.class);
+        User user1 = mock(User.class);
+        User user2 = mock(User.class);
+        Beacon beacon1 = mock(Beacon.class);
+        Beacon beacon2 = mock(Beacon.class);
+
+        when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
+        when(gatewayRepository.findByMacAddr(gatewayMac)).thenReturn(Optional.of(gateway));
+        when(beaconRepository.findByMacAddr("F4741C781187")).thenReturn(Optional.of(beacon1));
+        when(beaconRepository.findByMacAddr("DE42759B6E12")).thenReturn(Optional.of(beacon2));
+        when(beacon1.getUser()).thenReturn(user1);
+        when(beacon2.getUser()).thenReturn(user2);
+        when(gateway.getCompany()).thenReturn(company);
+        when(user1.getCompany()).thenReturn(company);
+        when(user2.getCompany()).thenReturn(company);
+        when(company.getStartTime()).thenReturn(LocalTime.of(9, 0));
+        when(company.getEndTime()).thenReturn(LocalTime.of(18, 0));
+        when(commuteRepository.findByUserAndDate(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(new Commute(user1, LocalDate.of(2024, 7, 23), LocalTime.of(8, 0), LocalTime.of(8, 1), AttendanceStatus.PRESENT, WorkStatus.IN_OFFICE)));
+        when(commuteRepository.findByUserAndDate(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(new Commute(user2, LocalDate.of(2024, 7, 23), LocalTime.of(8, 1), LocalTime.of(8, 2), AttendanceStatus.PRESENT, WorkStatus.IN_OFFICE)));
+
+        // When
+        commuteService.processAttendance(gatewayMac, List.of(beaconData1, beaconData2));
+
+        // Then
+        verify(commuteRepository, times(2)).save(commuteCapture.capture());
+        List<Commute> savedCommutes = commuteCapture.getAllValues();
+
+        // Assert each saved Commute
+        Commute commute1 = savedCommutes.get(0);
+        assertEquals(user1, commute1.getUser());
+        assertEquals(LocalDate.of(2024, 7, 23), commute1.getDate());
+        assertEquals(LocalTime.of(8, 0), commute1.getStartedAt());
+        assertEquals(LocalTime.of(9, 1), commute1.getEndedAt());
+        assertEquals(AttendanceStatus.PRESENT, commute1.getAttendanceStatus());
+        assertEquals(WorkStatus.IN_OFFICE, commute1.getWorkStatus());
+
+        Commute commute2 = savedCommutes.get(1);
+        assertEquals(user2, commute2.getUser());
+        assertEquals(LocalDate.of(2024, 7, 23), commute2.getDate());
+        assertEquals(LocalTime.of(8, 1), commute2.getStartedAt());
+        assertEquals(LocalTime.of(9, 2), commute2.getEndedAt());
+        assertEquals(AttendanceStatus.PRESENT, commute2.getAttendanceStatus());
+        assertEquals(WorkStatus.IN_OFFICE, commute2.getWorkStatus());
+    }
 }
