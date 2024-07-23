@@ -245,6 +245,6 @@ public class CommuteService {
     private boolean isWeekend() {
         LocalDate today = timeService.nowDate();
         DayOfWeek dayOfWeek = today.getDayOfWeek();
-        return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
+        return dayOfWeek == DayOfWeek .SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
     }
 }
