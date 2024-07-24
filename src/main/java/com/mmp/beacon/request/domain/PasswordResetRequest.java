@@ -1,6 +1,5 @@
 package com.mmp.beacon.request.domain;
 
-import com.mmp.beacon.global.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

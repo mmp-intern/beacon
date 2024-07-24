@@ -22,7 +22,6 @@ public class Gateway extends BaseEntity {
     @JoinColumn(name = "company_no", nullable = false)
     private Company company;
 
-    @Column(name = "gateway_name", length = 50, nullable = false)
-    private String name;
-
+    @Column(name = "gateway_mac_addr", length = 50, nullable = false)
+    private String macAddr;
 }
