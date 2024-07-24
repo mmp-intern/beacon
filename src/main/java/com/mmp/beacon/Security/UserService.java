@@ -44,7 +44,7 @@ public class UserService {
             SecurityContextHolder.getContext().setAuthentication(auth);
 
             HttpSession session = request.getSession(true);
-            session.setAttribute("user", user);
+            session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
             logger.info("User authenticated: {}", user.getUserId());
             logger.info("Session ID: {}", session.getId());
