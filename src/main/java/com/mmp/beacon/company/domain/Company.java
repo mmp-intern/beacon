@@ -21,9 +21,4 @@ public class Company extends BaseEntity {
 
     @Column(name = "company_name", length = 50, nullable = false)
     private String name;
-
-    // Setter method for companyName
-    public void setCompanyName(String name) {
-        this.name = name;
-    }
 }
