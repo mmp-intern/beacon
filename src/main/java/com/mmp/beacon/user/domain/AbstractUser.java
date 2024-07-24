@@ -52,9 +52,13 @@ public abstract class AbstractUser extends BaseEntity {
         this.sex = sex;
         this.position = position;
     }
+
+    // 사용자 권한 반환
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()));
     }
+
+    // 사용자 역할 설정
     public void setRole(UserRole role) {
         this.role = role;
     }

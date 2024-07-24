@@ -1,16 +1,17 @@
-package com.mmp.beacon.Security;
+package com.mmp.beacon.security;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 public class SecurityUtil {
 
+    // 현재 인증된 사용자 이름 반환
     public static String getCurrentUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
-            if (principal instanceof UserDetail) {
-                return ((UserDetail) principal).getUsername();
+            if (principal instanceof com.mmp.beacon.security.UserDetail) {
+                return ((com.mmp.beacon.security.UserDetail) principal).getUsername();
             } else if (principal instanceof String) {
                 return (String) principal;
             }
@@ -18,17 +19,17 @@ public class SecurityUtil {
         return null;
     }
 
+    // 현재 인증된 사용자 ID 반환
     public static Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
-            if (principal instanceof UserDetail) {
-                return ((UserDetail) principal).getUserId();
+            if (principal instanceof com.mmp.beacon.security.UserDetail) {
+                return ((com.mmp.beacon.security.UserDetail) principal).getUserId();
             } else if (principal instanceof String) {
                 try {
                     return Long.valueOf((String) principal);
                 } catch (NumberFormatException e) {
-                    // principal이 String이지만 숫자가 아닐 경우 null 반환
                     return null;
                 }
             }

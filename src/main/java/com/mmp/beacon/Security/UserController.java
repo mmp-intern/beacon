@@ -1,5 +1,7 @@
 package com.mmp.beacon.Security;
 
+import com.mmp.beacon.Security.UserLoginDTO;
+import com.mmp.beacon.Security.UserRegisterDTO;
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.CompanyService;
 import com.mmp.beacon.user.domain.AbstractUser;
@@ -27,9 +29,10 @@ public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    private final UserService userService;
+    private final com.mmp.beacon.Security.UserService userService;
     private final CompanyService companyService;
 
+    // 회원가입 엔드포인트
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody UserRegisterDTO userDto) {
         logger.info("Register request received: {}", userDto);
@@ -49,6 +52,7 @@ public class UserController {
         }
     }
 
+    // 로그인 엔드포인트
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody UserLoginDTO userDto, HttpServletRequest request, HttpServletResponse response) {
         logger.info("Login request received for userId: {}", userDto.getUserId());
@@ -56,10 +60,7 @@ public class UserController {
         if (isAuthenticated) {
             AbstractUser user = userService.getCurrentUser();
             if (user != null) {
-                HttpSession session = request.getSession(true);
-                session.setAttribute("user", user);
-
-                Cookie cookie = new Cookie("JSESSIONID", session.getId());
+                Cookie cookie = new Cookie("JSESSIONID", request.getSession().getId());
                 cookie.setPath("/");
                 cookie.setHttpOnly(true);
                 cookie.setMaxAge(60 * 60);
@@ -74,6 +75,7 @@ public class UserController {
         }
     }
 
+    // 로그아웃 엔드포인트
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -83,15 +85,28 @@ public class UserController {
         return ResponseEntity.ok("Logout successful");
     }
 
-    @GetMapping("/profile/me")
-    public ResponseEntity<AbstractUser> profile(HttpServletRequest request) {
-        HttpSession session = request.getSession(false); // 기존 세션 확인, 세션이 없으면 null 반환
+    // 현재 유저 정보 반환 엔드포인트
+    public ResponseEntity<?> profile(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
         if (session != null) {
-            AbstractUser user = (AbstractUser) session.getAttribute("user"); // 세션에서 유저 정보 가져오기
+            logger.info("Session ID: {}", session.getId());
+            logger.info("Authentication: {}", SecurityContextHolder.getContext().getAuthentication());
+
+            AbstractUser user = (AbstractUser) session.getAttribute("user");
             if (user != null) {
-                return ResponseEntity.ok(user); // 유저 정보 반환
+                return ResponseEntity.ok(user);
+            } else {
+                logger.warn("User not found in session");
             }
+        } else {
+            logger.warn("Session not found");
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null); // 에러 반환
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+    }
+
+    // 홈 엔드포인트
+    @GetMapping("/")
+    public String home() {
+        return "redirect:/login";
     }
 }

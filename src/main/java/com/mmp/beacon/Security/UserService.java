@@ -8,6 +8,8 @@ import com.mmp.beacon.user.domain.UserRole;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +21,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -36,13 +40,15 @@ public class UserService {
         if (userOpt.isPresent() && bCryptPasswordEncoder.matches(userDto.getPassword(), userOpt.get().getPassword())) {
             AbstractUser user = userOpt.get();
 
-            //security 인증 설정
-            Authentication auth = new UsernamePasswordAuthenticationToken(new UserDetail(user), null, user.getAuthorities());
+            Authentication auth = new UsernamePasswordAuthenticationToken(new com.mmp.beacon.security.UserDetail(user), null, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(auth);
 
-            //세션 생성 및 유저 정보 저장
-            HttpSession session = request.getSession(true);//세션이 없으면 새로 생성, 있으면 기존 세션 반환
-            session.setAttribute("user", user);//세션에 유저 정보 저장
+            HttpSession session = request.getSession(true);
+            session.setAttribute("user", user);
+
+            logger.info("User authenticated: {}", user.getUserId());
+            logger.info("Session ID: {}", session.getId());
+            logger.info("Authentication: {}", SecurityContextHolder.getContext().getAuthentication());
 
             return true;
         }
@@ -51,17 +57,9 @@ public class UserService {
 
     public AbstractUser getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof UserDetail) {
-            return ((UserDetail) auth.getPrincipal()).getUser();
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof com.mmp.beacon.security.UserDetail) {
+            return ((com.mmp.beacon.security.UserDetail) auth.getPrincipal()).getUser();
         }
         return null;
-    }
-
-    public Optional<User> profile() {
-        AbstractUser currentUser = getCurrentUser();
-        if (currentUser != null && currentUser instanceof User) {
-            return Optional.of((User) currentUser);
-        }
-        return Optional.empty();
     }
 }

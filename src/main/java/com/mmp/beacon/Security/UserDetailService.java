@@ -18,6 +18,6 @@ public class UserDetailService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         AbstractUser abstractUser = userRepository.findByUserId(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return new UserDetail(abstractUser);
+        return new com.mmp.beacon.security.UserDetail(abstractUser);
     }
 }
