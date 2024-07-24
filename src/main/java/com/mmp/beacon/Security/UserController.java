@@ -1,7 +1,5 @@
 package com.mmp.beacon.Security;
 
-import com.mmp.beacon.Security.UserLoginDTO;
-import com.mmp.beacon.Security.UserRegisterDTO;
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.CompanyService;
 import com.mmp.beacon.user.domain.AbstractUser;
@@ -16,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.annotation.Validated;
@@ -60,7 +59,11 @@ public class UserController {
         if (isAuthenticated) {
             AbstractUser user = userService.getCurrentUser();
             if (user != null) {
-                Cookie cookie = new Cookie("JSESSIONID", request.getSession().getId());
+                // 세션에 사용자 정보를 저장
+                HttpSession session = request.getSession();
+                session.setAttribute("user", user);
+
+                Cookie cookie = new Cookie("JSESSIONID", session.getId());
                 cookie.setPath("/");
                 cookie.setHttpOnly(true);
                 cookie.setMaxAge(60 * 60);
@@ -85,24 +88,30 @@ public class UserController {
         return ResponseEntity.ok("Logout successful");
     }
 
-    // 현재 유저 정보 반환 엔드포인트
-    public ResponseEntity<?> profile(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            logger.info("Session ID: {}", session.getId());
-            logger.info("Authentication: {}", SecurityContextHolder.getContext().getAuthentication());
 
-            AbstractUser user = (AbstractUser) session.getAttribute("user");
-            if (user != null) {
-                return ResponseEntity.ok(user);
-            } else {
-                logger.warn("User not found in session");
-            }
-        } else {
-            logger.warn("Session not found");
+
+
+    @GetMapping("profile/me")
+    public ResponseEntity<?> getProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof UserDetail)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+
+        UserDetail userDetail = (UserDetail) authentication.getPrincipal();
+        UserProfileDTO userProfile = new UserProfileDTO(
+                userDetail.getUsername(),
+                userDetail.getEmail(),
+                userDetail.getSex(),
+                userDetail.getPosition(),
+                userDetail.getName(),
+                userDetail.getPhone(),
+                userDetail.getCompany()
+        );
+
+        return ResponseEntity.ok(userProfile);
     }
+
 
     // 홈 엔드포인트
     @GetMapping("/")

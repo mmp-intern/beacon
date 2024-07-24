@@ -1,4 +1,4 @@
-package com.mmp.beacon.security;
+package com.mmp.beacon.Security;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -10,8 +10,8 @@ public class SecurityUtil {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
-            if (principal instanceof com.mmp.beacon.security.UserDetail) {
-                return ((com.mmp.beacon.security.UserDetail) principal).getUsername();
+            if (principal instanceof UserDetail) {
+                return ((UserDetail) principal).getUsername();
             } else if (principal instanceof String) {
                 return (String) principal;
             }
@@ -20,18 +20,14 @@ public class SecurityUtil {
     }
 
     // 현재 인증된 사용자 ID 반환
-    public static Long getCurrentUserId() {
+    public static String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
-            if (principal instanceof com.mmp.beacon.security.UserDetail) {
-                return ((com.mmp.beacon.security.UserDetail) principal).getUserId();
+            if (principal instanceof UserDetail) {
+                return ((UserDetail) principal).getUsername();
             } else if (principal instanceof String) {
-                try {
-                    return Long.valueOf((String) principal);
-                } catch (NumberFormatException e) {
-                    return null;
-                }
+                return (String) principal;
             }
         }
         return null;

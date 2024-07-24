@@ -20,23 +20,23 @@ public class User extends AbstractUser {
     @Column(name = "user_name", nullable = false)
     private String name;
 
-    @Column(name = "email", nullable = false)
-    private String email;
-
     @Column(name = "phone", nullable = false)
     private String phone;
 
+    //중복
+   /* @Column(name = "email", nullable = false)
+    private String email;
+
     @Column(name = "position", nullable = false)
-    private String position;
+    private String position;*/
 
     public User(String userId, String password, String name, String phone, String email, String sex, String position, Company company) {
         super(userId, password, UserRole.USER, email, sex, position);
         this.name = name;
         this.phone = phone;
-        this.email = email;
         this.company = company;
-        this.position = position;
     }
+
     public void setRole(UserRole role) {
         this.role = role;
     }

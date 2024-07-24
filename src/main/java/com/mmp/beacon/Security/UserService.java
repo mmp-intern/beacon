@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+
 import java.util.Optional;
 
 @Service
@@ -39,8 +40,11 @@ public class UserService {
 
         if (userOpt.isPresent() && bCryptPasswordEncoder.matches(userDto.getPassword(), userOpt.get().getPassword())) {
             AbstractUser user = userOpt.get();
+            if (user.getRole() == null) {
+                user.setRole(UserRole.USER); // 기본 Role 설정
+            }
 
-            Authentication auth = new UsernamePasswordAuthenticationToken(new com.mmp.beacon.security.UserDetail(user), null, user.getAuthorities());
+            Authentication auth = new UsernamePasswordAuthenticationToken(new UserDetail(user), null, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(auth);
 
             HttpSession session = request.getSession(true);
@@ -49,6 +53,8 @@ public class UserService {
             logger.info("User authenticated: {}", user.getUserId());
             logger.info("Session ID: {}", session.getId());
             logger.info("Authentication: {}", SecurityContextHolder.getContext().getAuthentication());
+            logger.info("UserDetail email: {}", ((UserDetail) auth.getPrincipal()).getEmail());
+            logger.info("UserDetail position: {}", ((UserDetail) auth.getPrincipal()).getPosition());
 
             return true;
         }
@@ -57,9 +63,13 @@ public class UserService {
 
     public AbstractUser getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof com.mmp.beacon.security.UserDetail) {
-            return ((com.mmp.beacon.security.UserDetail) auth.getPrincipal()).getUser();
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof UserDetail) {
+            UserDetail userDetail = (UserDetail) auth.getPrincipal();
+            System.out.println("UserDetail email: " + userDetail.getEmail());
+            System.out.println("UserDetail position: " + userDetail.getPosition());
+            return userRepository.findByUserId(userDetail.getUsername()).orElseThrow(() -> new IllegalStateException("User not found"));
         }
         return null;
     }
+
 }

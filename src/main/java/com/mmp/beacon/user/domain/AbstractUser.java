@@ -37,10 +37,12 @@ public abstract class AbstractUser extends BaseEntity {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "sex")
+
+
+    @Column(name = "sex", nullable = false)
     private String sex;
 
-    @Column(name = "position")
+    @Column(name = "position", nullable = false)
     private String position;
 
     /// 생성자
