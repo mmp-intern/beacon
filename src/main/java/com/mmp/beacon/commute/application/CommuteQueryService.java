@@ -8,6 +8,7 @@ import com.mmp.beacon.user.domain.AbstractUser;
 import com.mmp.beacon.user.domain.Admin;
 import com.mmp.beacon.user.domain.User;
 import com.mmp.beacon.user.domain.repository.AbstractUserRepository;
+import com.mmp.beacon.user.domain.repository.UserRepository;
 import com.mmp.beacon.user.exception.SuperAdminAccessException;
 import com.mmp.beacon.user.exception.UserNotFoundException;
 import com.mmp.beacon.user.exception.UserWithoutCompanyException;
@@ -27,6 +28,7 @@ public class CommuteQueryService {
     private final CommuteRepository commuteRepository;
     private final AbstractUserRepository abstractUserRepository;
     private final TimeService timeService;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public Page<CommuteRecordResponse> findTodayCommuteRecords(Long userId, Pageable pageable) {
@@ -34,8 +36,10 @@ public class CommuteQueryService {
         AbstractUser user = abstractUserRepository.findById(userId).orElseThrow(UserNotFoundException::new);
         Long companyId = getCompanyId(user);
 
-        Page<Commute> commutes = commuteRepository.findAllByDateAndUser_Company_Id(today, companyId, pageable);
-        return commutes.map(this::mapToCommuteRecordResponse);
+        return userRepository.findByCompanyId(companyId, pageable).map(userPage -> {
+            Optional<Commute> commute = commuteRepository.findByUserAndDate(userPage, today);
+            return mapToCommuteRecordResponse(userPage, commute.orElse(null));
+        });
     }
 
     private Long getCompanyId(AbstractUser abstractUser) {
@@ -52,21 +56,21 @@ public class CommuteQueryService {
         }
     }
 
-    private CommuteRecordResponse mapToCommuteRecordResponse(Commute commute) {
+    private CommuteRecordResponse mapToCommuteRecordResponse(User user, Commute commute) {
         CommuteRecordResponse.UserInfo userInfo = new CommuteRecordResponse.UserInfo(
-                commute.getUser().getId(),
-                commute.getUser().getUserId(),
-                commute.getUser().getName()
+                user.getId(),
+                user.getUserId(),
+                user.getName()
         );
 
-        CommuteRecordResponse.CommuteInfo commuteInfo = new CommuteRecordResponse.CommuteInfo(
+        CommuteRecordResponse.CommuteInfo commuteInfo = (commute != null) ? new CommuteRecordResponse.CommuteInfo(
                 commute.getId(),
                 commute.getDate(),
                 commute.getStartedAt(),
                 commute.getEndedAt(),
                 commute.getAttendanceStatus(),
                 commute.getWorkStatus()
-        );
+        ) : null;
 
         return new CommuteRecordResponse(userInfo, commuteInfo);
     }
