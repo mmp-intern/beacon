@@ -1,8 +1,8 @@
 package com.mmp.beacon.Security;
 
 import com.mmp.beacon.company.domain.Company;
-import com.mmp.beacon.company.domain.CompanyService;
-import com.mmp.beacon.user.domain.AbstractUser;
+import com.mmp.beacon.company.domain.repository.CompanyRepository;
+import com.mmp.beacon.user.domain.User;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,9 +16,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -28,38 +31,39 @@ public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    private final com.mmp.beacon.Security.UserService userService;
-    private final CompanyService companyService;
+    private final UserService userService;
+    private final CompanyRepository companyRepository;
 
-    // 회원가입 엔드포인트
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody UserRegisterDTO userDto) {
+    @PostMapping("/users")
+    public ResponseEntity<String> createUser(@Valid @RequestBody CreateUserRequest userDto) {
         logger.info("Register request received: {}", userDto);
         try {
-            Company company = companyService.findCompanyById(userDto.getCompany());
+            Optional<Company> companyOptional = companyRepository.findByName(userDto.getCompany());
+            if (companyOptional.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid company name.");
+            }
+            Company company = companyOptional.get();
             userService.register(userDto, company);
             return ResponseEntity.ok("User registered successfully");
-        } catch (NumberFormatException e) {
-            logger.error("Invalid company ID format: ", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid company ID format.");
         } catch (DataIntegrityViolationException e) {
             logger.error("Duplicate entry error: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: Duplicate entry.");
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid role or permission error: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Registration failed: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: " + e.getMessage());
         }
     }
 
-    // 로그인 엔드포인트
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody UserLoginDTO userDto, HttpServletRequest request, HttpServletResponse response) {
         logger.info("Login request received for userId: {}", userDto.getUserId());
         boolean isAuthenticated = userService.authenticate(userDto, request);
         if (isAuthenticated) {
-            AbstractUser user = userService.getCurrentUser();
+            User user = userService.getCurrentUser();
             if (user != null) {
-                // 세션에 사용자 정보를 저장
                 HttpSession session = request.getSession();
                 session.setAttribute("user", user);
 
@@ -78,7 +82,6 @@ public class UserController {
         }
     }
 
-    // 로그아웃 엔드포인트
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -87,9 +90,6 @@ public class UserController {
         }
         return ResponseEntity.ok("Logout successful");
     }
-
-
-
 
     @GetMapping("profile/me")
     public ResponseEntity<?> getProfile() {
@@ -102,18 +102,28 @@ public class UserController {
         UserProfileDTO userProfile = new UserProfileDTO(
                 userDetail.getUsername(),
                 userDetail.getEmail(),
-                userDetail.getSex(),
                 userDetail.getPosition(),
                 userDetail.getName(),
                 userDetail.getPhone(),
-                userDetail.getCompany()
+                userDetail.getCompany(),
+                userDetail.getRole()
         );
 
         return ResponseEntity.ok(userProfile);
     }
 
+    @GetMapping("/profile/{userId}")
+    public ResponseEntity<?> getUserProfile(@PathVariable("userId") String userId) {
+        try {
+            UserProfileDTO userProfile = userService.getUserProfile(userId);
+            return ResponseEntity.ok(userProfile);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 
-    // 홈 엔드포인트
     @GetMapping("/")
     public String home() {
         return "redirect:/login";

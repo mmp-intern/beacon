@@ -1,15 +1,16 @@
 package com.mmp.beacon.Security;
 
+
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class UserRegisterDTO {
+public class CreateUserRequest {
 
     @NotBlank(message = "Please enter your user ID.")
     private String userId;
@@ -29,12 +30,13 @@ public class UserRegisterDTO {
     @NotBlank(message = "Please enter a valid email address.")
     private String email;
 
-    @NotBlank(message = "Please enter your gender.")
-    private String sex;
-
     @NotBlank(message = "Please enter your position.")
     private String position;
 
     @NotBlank(message = "Please enter your company.")
     private String company;
+
+    @NotBlank(message = "Please enter the user role.")
+    private String role;
 }
+

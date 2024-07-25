@@ -1,7 +1,5 @@
 package com.mmp.beacon.Security;
 
-import com.mmp.beacon.user.domain.AbstractUser;
-import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.user.domain.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,32 +16,24 @@ public class UserDetail implements UserDetails {
     private final String userId;
     private final String password;
     private final String email;
-    private final String sex;
     private final String position;
     private final String name;
     private final String phone;
     private final String company;
     private final String role;
+    private final User user;
 
-    public UserDetail(AbstractUser abstractUser) {
-        this.userId = abstractUser.getUserId();
-        this.password = abstractUser.getPassword();
-        this.email = abstractUser.getEmail();
-        this.sex = abstractUser.getSex();
-        this.position = abstractUser.getPosition();
-        this.role = abstractUser.getRole().name();
+    public UserDetail(User user) {
+        this.userId = user.getUserId();
+        this.password = user.getPassword();
+        this.email = user.getEmail();
+        this.position = user.getPosition();
+        this.role = user.getRole().name();
+        this.name = user.getName();
+        this.phone = user.getPhone();
+        this.company = user.getCompany().getName();
+        this.user = user;
 
-        // Initialize additional fields for User
-        if (abstractUser instanceof User) {
-            User user = (User) abstractUser;
-            this.name = user.getName();
-            this.phone = user.getPhone();
-            this.company = user.getCompany().getName();
-        } else {
-            this.name = null;
-            this.phone = null;
-            this.company = null;
-        }
         // 로그 추가
         Logger logger = LoggerFactory.getLogger(UserDetail.class);
         logger.info("UserDetail Constructed: email={}, position={}", this.email, this.position);
@@ -82,5 +72,9 @@ public class UserDetail implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public User getUser() {
+        return user;
     }
 }

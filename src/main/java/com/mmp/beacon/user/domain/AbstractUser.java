@@ -34,25 +34,12 @@ public abstract class AbstractUser extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
-    @Column(name = "email", nullable = false, unique = true)
-    private String email;
 
-
-
-    @Column(name = "sex", nullable = false)
-    private String sex;
-
-    @Column(name = "position", nullable = false)
-    private String position;
-
-    /// 생성자
-    protected AbstractUser(String userId, String password, UserRole role, String email, String sex, String position) {
+    // 생성자
+    protected AbstractUser(String userId, String password, UserRole role) {
         this.userId = userId;
         this.password = password;
         this.role = role;
-        this.email = email;
-        this.sex = sex;
-        this.position = position;
     }
 
     // 사용자 권한 반환

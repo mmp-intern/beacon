@@ -1,7 +1,7 @@
 package com.mmp.beacon.user.domain;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import com.mmp.beacon.company.domain.Company;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +12,16 @@ import lombok.NoArgsConstructor;
 @DiscriminatorValue("SUPER_ADMIN")
 public class SuperAdmin extends AbstractUser {
 
-    public SuperAdmin(String userId, String password, String email, String sex, String position) {
-        super(userId, password, UserRole.SUPER_ADMIN, email, sex, position);
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_no", nullable = false)
+    private Company company;
+
+    public SuperAdmin(String userId, String password, Company company) {
+        super(userId, password, UserRole.SUPER_ADMIN);
+        this.company = company;
+    }
+
+    public void setCompany(Company company) {
+        this.company = company;
     }
 }

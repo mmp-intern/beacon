@@ -16,8 +16,12 @@ public class Admin extends AbstractUser {
     @JoinColumn(name = "company_no", nullable = false)
     private Company company;
 
-    public Admin(String userId, String password, String email, String sex, String position, Company company) {
-        super(userId, password, UserRole.ADMIN, email, sex, position);
+    public Admin(String userId, String password, Company company) {
+        super(userId, password, UserRole.ADMIN);
+        this.company = company;
+    }
+
+    public void setCompany(Company company) {
         this.company = company;
     }
 }

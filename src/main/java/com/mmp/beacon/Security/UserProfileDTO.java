@@ -8,9 +8,9 @@ import lombok.Getter;
 public class UserProfileDTO {
     private String userId;
     private String email;
-    private String sex;
     private String position;
     private String name;
     private String phone;
     private String company;
+    private String role;
 }

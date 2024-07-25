@@ -25,7 +25,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/login", "/api/v1/register").permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/superadmin/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/v1/user/**").hasRole("USER")
+                        .requestMatchers("/api/v1/login").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
