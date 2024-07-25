@@ -1,11 +1,11 @@
-package com.mmp.beacon.Security;
+package com.mmp.beacon.security.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class UserProfileDTO {
+public class UserProfileResponse {
     private String userId;
     private String email;
     private String position;

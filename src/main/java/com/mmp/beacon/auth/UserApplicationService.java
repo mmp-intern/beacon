@@ -1,7 +1,10 @@
-package com.mmp.beacon.Security;
+package com.mmp.beacon.security;
 
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
+import com.mmp.beacon.security.presentation.request.CreateUserRequest;
+import com.mmp.beacon.security.presentation.request.LoginRequest;
+import com.mmp.beacon.security.response.UserProfileResponse;
 import com.mmp.beacon.user.domain.User;
 import com.mmp.beacon.user.domain.UserRole;
 import com.mmp.beacon.user.domain.repository.UserRepository;
@@ -22,9 +25,9 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserApplicationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserApplicationService.class);
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
@@ -72,7 +75,7 @@ public class UserService {
         }
     }
 
-    public boolean authenticate(UserLoginDTO userDto, HttpServletRequest request) {
+    public boolean authenticate(LoginRequest userDto, HttpServletRequest request) {
         logger.info("Authenticating user: {}", userDto.getUserId());
         Optional<User> userOpt = userRepository.findByUserId(userDto.getUserId());
 
@@ -105,7 +108,7 @@ public class UserService {
         return null;
     }
 
-    public UserProfileDTO getUserProfile(String userId) {
+    public UserProfileResponse getUserProfile(String userId) {
         User currentUser = getCurrentUser();
         if (currentUser == null) {
             throw new IllegalArgumentException("Authentication required");
@@ -119,7 +122,7 @@ public class UserService {
             throw new IllegalArgumentException("Access denied: You cannot view profiles from other companies.");
         }
 
-        return new UserProfileDTO(
+        return new UserProfileResponse(
                 user.getUserId(),
                 user.getEmail(),
                 user.getPosition(),

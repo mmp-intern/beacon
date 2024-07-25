@@ -1,4 +1,4 @@
-package com.mmp.beacon.Security;
+package com.mmp.beacon.security;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

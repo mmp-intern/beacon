@@ -1,6 +1,4 @@
-package com.mmp.beacon.Security;
-
-
+package com.mmp.beacon.security.presentation.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

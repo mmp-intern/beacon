@@ -1,7 +1,10 @@
-package com.mmp.beacon.Security;
+package com.mmp.beacon.security;
 
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
+import com.mmp.beacon.security.presentation.request.CreateUserRequest;
+import com.mmp.beacon.security.presentation.request.LoginRequest;
+import com.mmp.beacon.security.response.UserProfileResponse;
 import com.mmp.beacon.user.domain.User;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,11 +30,11 @@ import java.util.Optional;
 @RequestMapping("/api/v1")
 @Validated
 @RequiredArgsConstructor
-public class UserController {
+public class UserPresentationController {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserPresentationController.class);
 
-    private final UserService userService;
+    private final UserApplicationService userApplicationService;
     private final CompanyRepository companyRepository;
 
     @PostMapping("/users")
@@ -43,7 +46,7 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid company name.");
             }
             Company company = companyOptional.get();
-            userService.register(userDto, company);
+            userApplicationService.register(userDto, company);
             return ResponseEntity.ok("User registered successfully");
         } catch (DataIntegrityViolationException e) {
             logger.error("Duplicate entry error: ", e);
@@ -58,11 +61,11 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody UserLoginDTO userDto, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest userDto, HttpServletRequest request, HttpServletResponse response) {
         logger.info("Login request received for userId: {}", userDto.getUserId());
-        boolean isAuthenticated = userService.authenticate(userDto, request);
+        boolean isAuthenticated = userApplicationService.authenticate(userDto, request);
         if (isAuthenticated) {
-            User user = userService.getCurrentUser();
+            User user = userApplicationService.getCurrentUser();
             if (user != null) {
                 HttpSession session = request.getSession();
                 session.setAttribute("user", user);
@@ -99,7 +102,7 @@ public class UserController {
         }
 
         UserDetail userDetail = (UserDetail) authentication.getPrincipal();
-        UserProfileDTO userProfile = new UserProfileDTO(
+        UserProfileResponse userProfile = new UserProfileResponse(
                 userDetail.getUsername(),
                 userDetail.getEmail(),
                 userDetail.getPosition(),
@@ -115,7 +118,7 @@ public class UserController {
     @GetMapping("/profile/{userId}")
     public ResponseEntity<?> getUserProfile(@PathVariable("userId") String userId) {
         try {
-            UserProfileDTO userProfile = userService.getUserProfile(userId);
+            UserProfileResponse userProfile = userApplicationService.getUserProfile(userId);
             return ResponseEntity.ok(userProfile);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());

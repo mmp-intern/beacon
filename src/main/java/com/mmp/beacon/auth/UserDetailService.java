@@ -1,4 +1,4 @@
-package com.mmp.beacon.Security;
+package com.mmp.beacon.security;
 
 import com.mmp.beacon.user.domain.User;
 import com.mmp.beacon.user.domain.repository.UserRepository;
