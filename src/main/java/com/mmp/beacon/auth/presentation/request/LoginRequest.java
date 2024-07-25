@@ -1,4 +1,4 @@
-package com.mmp.beacon.security.presentation.request;
+package com.mmp.beacon.auth.presentation.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

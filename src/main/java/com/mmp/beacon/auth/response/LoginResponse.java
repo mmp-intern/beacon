@@ -1,4 +1,4 @@
-package com.mmp.beacon.security.response;
+package com.mmp.beacon.auth.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

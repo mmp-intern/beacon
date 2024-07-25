@@ -1,4 +1,4 @@
-package com.mmp.beacon.security.config;
+package com.mmp.beacon.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
