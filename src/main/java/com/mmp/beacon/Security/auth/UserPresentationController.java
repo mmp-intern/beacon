@@ -4,7 +4,7 @@ import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
 import com.mmp.beacon.auth.presentation.request.CreateUserRequest;
 import com.mmp.beacon.auth.presentation.request.LoginRequest;
-import com.mmp.beacon.auth.response.UserProfileResponse;
+import com.mmp.beacon.auth.query.response.UserProfileResponse;
 import com.mmp.beacon.user.domain.User;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
