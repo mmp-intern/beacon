@@ -20,8 +20,4 @@ public class Admin extends AbstractUser {
         super(userId, password, UserRole.ADMIN);
         this.company = company;
     }
-
-    public void setCompany(Company company) {
-        this.company = company;
-    }
 }

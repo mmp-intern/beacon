@@ -42,3 +42,5 @@ public class User extends AbstractUser {
         super.setRole(role);
     }
 }
+
+//lombok도 셋,데안 씀

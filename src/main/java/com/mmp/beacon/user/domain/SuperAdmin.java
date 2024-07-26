@@ -20,8 +20,4 @@ public class SuperAdmin extends AbstractUser {
         super(userId, password, UserRole.SUPER_ADMIN);
         this.company = company;
     }
-
-    public void setCompany(Company company) {
-        this.company = company;
-    }
 }

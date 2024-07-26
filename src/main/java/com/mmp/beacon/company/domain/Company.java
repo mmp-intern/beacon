@@ -5,12 +5,10 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalTime;
 
 @Getter
-@Setter
 @Entity
 @Table(name = "company")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
