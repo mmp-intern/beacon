@@ -1,4 +1,4 @@
-package com.mmp.beacon.auth;
+package com.mmp.beacon.Security.auth;
 
 import com.mmp.beacon.user.domain.User;
 import lombok.Getter;

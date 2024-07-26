@@ -1,10 +1,10 @@
-package com.mmp.beacon.auth;
+package com.mmp.beacon.Security.auth;
 
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
-import com.mmp.beacon.auth.presentation.request.CreateUserRequest;
-import com.mmp.beacon.auth.presentation.request.LoginRequest;
-import com.mmp.beacon.auth.query.response.UserProfileResponse;
+import com.mmp.beacon.Security.presentation.request.CreateUserRequest;
+import com.mmp.beacon.Security.presentation.request.LoginRequest;
+import com.mmp.beacon.Security.query.response.UserProfileResponse;
 import com.mmp.beacon.user.domain.User;
 import com.mmp.beacon.user.domain.UserRole;
 import com.mmp.beacon.user.domain.repository.UserRepository;
