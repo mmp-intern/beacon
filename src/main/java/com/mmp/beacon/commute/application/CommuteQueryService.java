@@ -1,5 +1,6 @@
 package com.mmp.beacon.commute.application;
 
+import com.mmp.beacon.commute.application.command.CommuteSearchCommand;
 import com.mmp.beacon.commute.domain.Commute;
 import com.mmp.beacon.commute.domain.repository.CommuteRepository;
 import com.mmp.beacon.commute.query.response.CommuteRecordResponse;
@@ -27,8 +28,8 @@ public class CommuteQueryService {
 
     private final CommuteRepository commuteRepository;
     private final AbstractUserRepository abstractUserRepository;
-    private final TimeService timeService;
     private final UserRepository userRepository;
+    private final TimeService timeService;
 
     @Transactional(readOnly = true)
     public Page<CommuteRecordResponse> findTodayCommuteRecords(Long userId, Pageable pageable) {
@@ -38,6 +39,22 @@ public class CommuteQueryService {
 
         return userRepository.findByCompanyId(companyId, pageable).map(userPage -> {
             Optional<Commute> commute = commuteRepository.findByUserAndDate(userPage, today);
+            return mapToCommuteRecordResponse(userPage, commute.orElse(null));
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CommuteRecordResponse> findCommuteRecordsByDate(CommuteSearchCommand command) {
+        AbstractUser user = abstractUserRepository.findById(command.userId())
+                .orElseThrow(UserNotFoundException::new);
+        Long companyId = getCompanyId(user);
+        LocalDate date = command.date() != null ? command.date() : timeService.nowDate();
+
+        Page<User> users = userRepository.findByCompanyIdAndSearchTerm(
+                companyId, command.searchTerm(), command.searchBy(), command.pageable());
+
+        return users.map(userPage -> {
+            Optional<Commute> commute = commuteRepository.findByUserAndDate(userPage, date);
             return mapToCommuteRecordResponse(userPage, commute.orElse(null));
         });
     }
