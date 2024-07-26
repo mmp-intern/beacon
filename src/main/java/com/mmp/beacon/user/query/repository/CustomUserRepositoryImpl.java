@@ -23,12 +23,8 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
     public Page<User> findByCompanyIdAndSearchTerm(Long companyId, String searchTerm, String searchBy, Pageable pageable) {
         QUser user = QUser.user;
 
-        BooleanExpression predicate = user.company.id.eq(companyId);
-        if ("name".equalsIgnoreCase(searchBy)) {
-            predicate = predicate.and(user.name.containsIgnoreCase(searchTerm));
-        } else if ("id".equalsIgnoreCase(searchBy)) {
-            predicate = predicate.and(user.id.eq(Long.parseLong(searchTerm)));
-        }
+        BooleanExpression predicate = user.company.id.eq(companyId)
+                .and(buildSearchPredicate(user, searchTerm, searchBy));
 
         List<User> users = queryFactory.selectFrom(user)
                 .where(predicate)
@@ -43,5 +39,16 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
                 .orElse(0L);
 
         return new PageImpl<>(users, pageable, total);
+    }
+
+    private BooleanExpression buildSearchPredicate(QUser user, String searchTerm, String searchBy) {
+        if (searchTerm != null && !searchTerm.isBlank()) {
+            if ("name".equalsIgnoreCase(searchBy)) {
+                return user.name.containsIgnoreCase(searchTerm);
+            } else if ("id".equalsIgnoreCase(searchBy)) {
+                return user.userId.containsIgnoreCase(searchTerm);
+            }
+        }
+        return null;
     }
 }

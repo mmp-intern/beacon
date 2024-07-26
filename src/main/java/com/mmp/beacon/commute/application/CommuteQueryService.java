@@ -48,7 +48,7 @@ public class CommuteQueryService {
         AbstractUser user = abstractUserRepository.findById(command.userId())
                 .orElseThrow(UserNotFoundException::new);
         Long companyId = getCompanyId(user);
-        LocalDate date = command.date() != null ? command.date() : timeService.nowDate();
+        LocalDate date = Optional.ofNullable(command.date()).orElse(timeService.nowDate());
 
         Page<User> users = userRepository.findByCompanyIdAndSearchTerm(
                 companyId, command.searchTerm(), command.searchBy(), command.pageable());
