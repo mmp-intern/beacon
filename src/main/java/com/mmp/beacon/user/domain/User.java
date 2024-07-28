@@ -43,4 +43,3 @@ public class User extends AbstractUser {
     }
 }
 
-//lombok도 셋,데안 씀

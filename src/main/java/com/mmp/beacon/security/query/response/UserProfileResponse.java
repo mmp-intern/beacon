@@ -1,4 +1,4 @@
-package com.mmp.beacon.Security.query.response;
+package com.mmp.beacon.security.query.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

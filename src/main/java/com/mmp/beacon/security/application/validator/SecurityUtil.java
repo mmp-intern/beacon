@@ -1,5 +1,6 @@
-package com.mmp.beacon.Security.auth;
+package com.mmp.beacon.security.application.validator;
 
+import com.mmp.beacon.security.config.UserDetail;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -25,7 +26,7 @@ public class SecurityUtil {
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
             if (principal instanceof UserDetail) {
-                return ((UserDetail) principal).getUsername();
+                return ((UserDetail) principal).getUserId();
             } else if (principal instanceof String) {
                 return (String) principal;
             }

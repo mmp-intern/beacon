@@ -1,5 +1,6 @@
-package com.mmp.beacon.Security.auth;
+package com.mmp.beacon.security.application.command;
 
+import com.mmp.beacon.security.config.UserDetail;
 import com.mmp.beacon.user.domain.User;
 import com.mmp.beacon.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,3 @@ public class UserDetailService implements UserDetailsService {
         return new UserDetail(User);
     }
 }
-
-
-
