@@ -20,11 +20,11 @@ public class User extends AbstractUser {
     @Column(name = "user_name", nullable = false)
     private String name;
 
-    @Column(name = "phone", nullable = false)
-    private String phone;
-
     @Column(name = "email", nullable = false)
     private String email;
+
+    @Column(name = "phone", nullable = false)
+    private String phone;
 
     @Column(name = "position", nullable = false)
     private String position;
