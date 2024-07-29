@@ -2,6 +2,7 @@ package com.mmp.beacon.security.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,6 +31,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/superadmin/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/v1/user/**").hasRole("USER")
                         .requestMatchers("/api/v1/login").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

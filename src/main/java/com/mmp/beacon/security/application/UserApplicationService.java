@@ -136,4 +136,33 @@ public class UserApplicationService {
                 user.getCompany().getName(),
                 user.getRole().name());
     }
+
+    // 사용자 삭제 서비스
+    public void deleteUser(String userId) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            throw new IllegalArgumentException("인증이 필요합니다.");
+        }
+
+        UserRole currentUserRole = currentUser.getRole();
+        if (currentUserRole != UserRole.SUPER_ADMIN && currentUserRole != UserRole.ADMIN) {
+            throw new IllegalArgumentException("권한 부족: 삭제할 수 없습니다.");
+        }
+
+        User userToDelete = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
+
+        if (!currentUser.getCompany().getName().equals(userToDelete.getCompany().getName())) {
+            throw new IllegalArgumentException("접근 거부: 다른 회사의 사용자를 삭제할 수 없습니다.");
+        }
+
+        if (currentUserRole == UserRole.ADMIN && userToDelete.getRole() != UserRole.USER) {
+            throw new IllegalArgumentException("권한 부족: 해당 사용자를 삭제할 수 없습니다.");
+        }
+
+        userRepository.delete(userToDelete);
+        logger.info("사용자 삭제 성공: {}", userId);
+    }
+
+
 }

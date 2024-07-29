@@ -1,11 +1,12 @@
 package com.mmp.beacon.security.presentation;
 
-import com.mmp.beacon.security.application.UserApplicationService;
-import com.mmp.beacon.security.config.UserDetail;
-import com.mmp.beacon.security.presentation.request.LoginRequest;
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
+import com.mmp.beacon.request.domain.ProfileUpdateRequest;
+import com.mmp.beacon.security.application.UserApplicationService;
+import com.mmp.beacon.security.config.UserDetail;
 import com.mmp.beacon.security.presentation.request.CreateUserRequest;
+import com.mmp.beacon.security.presentation.request.LoginRequest;
 import com.mmp.beacon.security.query.response.UserProfileResponse;
 import com.mmp.beacon.user.domain.User;
 import jakarta.servlet.http.Cookie;
@@ -129,8 +130,20 @@ public class UserPresentationController {
         }
     }
 
-    @GetMapping("/")
-    public String home() {
-        return "redirect:/login";
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<String> deleteUser(@PathVariable("userId") String userId) {
+        logger.info("사용자 삭제 요청 수신: {}", userId);
+        try {
+            userApplicationService.deleteUser(userId);
+            return ResponseEntity.ok("사용자 삭제 성공");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("사용자 삭제 실패: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("사용자 삭제 실패: " + e.getMessage());
+        }
     }
+
 }
