@@ -1,4 +1,4 @@
-package com.mmp.beacon.security.application.command;
+package com.mmp.beacon.security.application;
 
 import com.mmp.beacon.security.config.UserDetail;
 import com.mmp.beacon.security.presentation.request.CreateUserRequest;

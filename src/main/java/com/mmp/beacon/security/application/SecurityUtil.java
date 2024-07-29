@@ -1,4 +1,4 @@
-package com.mmp.beacon.security.application.validator;
+package com.mmp.beacon.security.application;
 
 import com.mmp.beacon.security.config.UserDetail;
 import org.springframework.security.core.Authentication;

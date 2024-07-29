@@ -1,6 +1,6 @@
 package com.mmp.beacon.security.presentation;
 
-import com.mmp.beacon.security.application.command.UserApplicationService;
+import com.mmp.beacon.security.application.UserApplicationService;
 import com.mmp.beacon.security.config.UserDetail;
 import com.mmp.beacon.security.presentation.request.LoginRequest;
 import com.mmp.beacon.company.domain.Company;
