@@ -41,30 +41,30 @@ public class UserPresentationController {
 
     @PostMapping("/users")
     public ResponseEntity<String> createUser(@Valid @RequestBody CreateUserRequest userDto) {
-        logger.info("Register request received: {}", userDto);
+        logger.info("사용자 등록 요청 수신: {}", userDto);
         try {
             Optional<Company> companyOptional = companyRepository.findByName(userDto.getCompany());
             if (companyOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid company name.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("유효하지 않은 회사 이름입니다.");
             }
             Company company = companyOptional.get();
             userApplicationService.register(userDto, company);
-            return ResponseEntity.ok("User registered successfully");
+            return ResponseEntity.ok("사용자 등록 성공");
         } catch (DataIntegrityViolationException e) {
-            logger.error("Duplicate entry error: ", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: Duplicate entry.");
+            logger.error("중복 항목 오류: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: 중복 항목.");
         } catch (IllegalArgumentException e) {
-            logger.error("Invalid role or permission error: ", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: " + e.getMessage());
+            logger.error("잘못된 역할 또는 권한 오류: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("Registration failed: ", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: " + e.getMessage());
+            logger.error("등록 실패: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: " + e.getMessage());
         }
     }
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody LoginRequest userDto, HttpServletRequest request, HttpServletResponse response) {
-        logger.info("Login request received for userId: {}", userDto.getUserId());
+        logger.info("로그인 요청 수신: 사용자 ID: {}", userDto.getUserId());
         boolean isAuthenticated = userApplicationService.authenticate(userDto, request);
         if (isAuthenticated) {
             User user = userApplicationService.getCurrentUser();
@@ -78,12 +78,12 @@ public class UserPresentationController {
                 cookie.setMaxAge(60 * 60);
                 response.addCookie(cookie);
 
-                return ResponseEntity.ok("Login successful. User ID: " + user.getUserId());
+                return ResponseEntity.ok("로그인 성공. 사용자 ID: " + user.getUserId());
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
             }
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("잘못된 자격 증명");
         }
     }
 
@@ -93,14 +93,14 @@ public class UserPresentationController {
         if (auth != null) {
             new SecurityContextLogoutHandler().logout(request, response, auth);
         }
-        return ResponseEntity.ok("Logout successful");
+        return ResponseEntity.ok("로그아웃 성공");
     }
 
     @GetMapping("profile/me")
     public ResponseEntity<?> getProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof UserDetail)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않음");
         }
 
         UserDetail userDetail = (UserDetail) authentication.getPrincipal();
