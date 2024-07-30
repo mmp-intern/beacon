@@ -1,7 +1,7 @@
 package com.mmp.beacon.commute.application;
 
-import com.mmp.beacon.commute.application.command.CommuteSearchCommand;
-import com.mmp.beacon.commute.application.command.CommuteStatisticsCommand;
+import com.mmp.beacon.commute.application.command.CommuteDailyCommand;
+import com.mmp.beacon.commute.application.command.CommutePeriodCommand;
 import com.mmp.beacon.commute.domain.AttendanceStatus;
 import com.mmp.beacon.commute.domain.Commute;
 import com.mmp.beacon.commute.domain.repository.CommuteRepository;
@@ -18,7 +18,6 @@ import com.mmp.beacon.user.exception.UserNotFoundException;
 import com.mmp.beacon.user.exception.UserWithoutCompanyException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +46,7 @@ public class CommuteQueryService {
     }*/
 
     @Transactional(readOnly = true)
-    public Page<CommuteRecordResponse> findCommuteRecordsByDate(CommuteSearchCommand command) {
+    public Page<CommuteRecordResponse> findCommuteRecordsByDate(CommuteDailyCommand command) {
         AbstractUser user = abstractUserRepository.findById(command.userId())
                 .orElseThrow(UserNotFoundException::new);
         Long companyId = getCompanyId(user);
@@ -63,7 +62,21 @@ public class CommuteQueryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CommuteStatisticsResponse> findCommuteStatistics(CommuteStatisticsCommand command) {
+    public Page<CommuteRecordResponse> findCommuteRecords(CommutePeriodCommand command) {
+        AbstractUser user = abstractUserRepository.findById(command.userId())
+                .orElseThrow(UserNotFoundException::new);
+        Long companyId = getCompanyId(user);
+        LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(timeService.nowDate());
+        LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(timeService.nowDate());
+
+        Page<Commute> commutes = commuteRepository.findByCompanyIdAndPeriodAndSearchTerm(
+                companyId, startDate, endDate, command.searchTerm(), command.searchBy(), command.pageable());
+
+        return commutes.map(commute -> mapToCommuteRecordResponse(commute.getUser(), commute));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CommuteStatisticsResponse> findCommuteStatistics(CommutePeriodCommand command) {
         AbstractUser user = abstractUserRepository.findById(command.userId())
                 .orElseThrow(UserNotFoundException::new);
         Long companyId = getCompanyId(user);

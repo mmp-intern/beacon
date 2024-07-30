@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
-public interface CommuteRepository extends JpaRepository<Commute, Long> {
+public interface CommuteRepository extends JpaRepository<Commute, Long>, CustomCommuteRepository {
 
     /**
      * 사용자와 날짜로 출퇴근 기록을 찾습니다.

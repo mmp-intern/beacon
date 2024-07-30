@@ -4,7 +4,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 
-public record CommuteStatisticsCommand(
+public record CommutePeriodCommand(
         Long userId,
         LocalDate startDate,
         LocalDate endDate,

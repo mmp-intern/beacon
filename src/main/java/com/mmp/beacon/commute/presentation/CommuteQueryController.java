@@ -1,8 +1,8 @@
 package com.mmp.beacon.commute.presentation;
 
 import com.mmp.beacon.commute.application.CommuteQueryService;
-import com.mmp.beacon.commute.application.command.CommuteSearchCommand;
-import com.mmp.beacon.commute.application.command.CommuteStatisticsCommand;
+import com.mmp.beacon.commute.application.command.CommuteDailyCommand;
+import com.mmp.beacon.commute.application.command.CommutePeriodCommand;
 import com.mmp.beacon.commute.query.response.CommuteRecordResponse;
 import com.mmp.beacon.commute.query.response.CommuteStatisticsResponse;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,6 @@ public class CommuteQueryController {
         return ResponseEntity.ok(commutes);
     }*/
 
-    // TODO: 특정 날짜가 아닌 특정 기간 동안의 출퇴근 기록을 조회하는 API로 수정
     @GetMapping("/daliy")
     public ResponseEntity<Page<CommuteRecordResponse>> listCommuteRecordsByDate(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -46,8 +45,25 @@ public class CommuteQueryController {
         // Long userId = SecurityUtil.getCurrentUserId();
         Long userId = 5L;
 
-        CommuteSearchCommand command = new CommuteSearchCommand(userId, date, searchTerm, searchBy, pageable);
+        CommuteDailyCommand command = new CommuteDailyCommand(userId, date, searchTerm, searchBy, pageable);
         Page<CommuteRecordResponse> commutes = commuteQueryService.findCommuteRecordsByDate(command);
+        return ResponseEntity.ok(commutes);
+    }
+
+    @GetMapping("/records")
+    public ResponseEntity<Page<CommuteRecordResponse>> listCommuteRecords(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false, defaultValue = "id") String searchBy,
+            Pageable pageable
+    ) {
+        // TODO: 회원 기능 구현 후 로그인한 사용자의 ID를 가져오도록 수정
+        // Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = 5L;
+
+        CommutePeriodCommand command = new CommutePeriodCommand(userId, startDate, endDate, searchTerm, searchBy, pageable);
+        Page<CommuteRecordResponse> commutes = commuteQueryService.findCommuteRecords(command);
         return ResponseEntity.ok(commutes);
     }
 
@@ -63,7 +79,7 @@ public class CommuteQueryController {
         // Long userId = SecurityUtil.getCurrentUserId();
         Long userId = 5L;
 
-        CommuteStatisticsCommand command = new CommuteStatisticsCommand(userId, startDate, endDate, searchTerm, searchBy, pageable);
+        CommutePeriodCommand command = new CommutePeriodCommand(userId, startDate, endDate, searchTerm, searchBy, pageable);
         Page<CommuteStatisticsResponse> statistics = commuteQueryService.findCommuteStatistics(command);
         return ResponseEntity.ok(statistics);
     }

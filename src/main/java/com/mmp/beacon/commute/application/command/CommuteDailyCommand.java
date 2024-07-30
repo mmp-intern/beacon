@@ -4,7 +4,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 
-public record CommuteSearchCommand(
+public record CommuteDailyCommand(
         Long userId,
         LocalDate date,
         String searchTerm,
