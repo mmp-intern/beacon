@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
 
+
 @Getter
 @Entity
 @Table(name = "company")
@@ -27,4 +28,5 @@ public class Company extends BaseEntity {
 
     @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
+
 }

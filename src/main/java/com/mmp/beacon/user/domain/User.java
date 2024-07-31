@@ -27,4 +27,13 @@ public class User extends AbstractUser {
 
     @Column(name = "position")
     private String position;
+
+
+    public User(String userId, String password, UserRole role, Company company, String name, String email, String phone, String position) {
+        super(userId, password, role, company);
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.position = position;
+    }
 }
