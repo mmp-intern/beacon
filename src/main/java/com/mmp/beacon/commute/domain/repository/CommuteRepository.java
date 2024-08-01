@@ -26,9 +26,9 @@ public interface CommuteRepository extends JpaRepository<Commute, Long>, CustomC
     /**
      * 특정 날짜와 회사 ID로 출퇴근 기록을 페이징하여 찾습니다.
      *
-     * @param data 날짜
+     * @param data      날짜
      * @param companyId 회사 ID
-     * @param pageable 페이지 정보
+     * @param pageable  페이지 정보
      * @return 페이징된 출퇴근 기록
      */
     Page<Commute> findAllByDateAndUser_Company_Id(LocalDate data, Long companyId, Pageable pageable);
@@ -36,10 +36,10 @@ public interface CommuteRepository extends JpaRepository<Commute, Long>, CustomC
     /**
      * 특정 사용자의 지정된 기간 동안의 출퇴근 기록을 출석 상태별로 집계합니다.
      *
-     * @param user 조회할 사용자
+     * @param user      조회할 사용자
      * @param startDate 조회할 시작 날짜
-     * @param endDate 조회할 종료 날짜
-     * @param status 조회할 출석 상태
+     * @param endDate   조회할 종료 날짜
+     * @param status    조회할 출석 상태
      * @return 해당 기간 동안의 출석 상태에 해당하는 출퇴근 기록 수
      */
     long countByUserAndDateBetweenAndAttendanceStatus(User user, LocalDate startDate, LocalDate endDate, AttendanceStatus status);
