@@ -12,9 +12,7 @@ import lombok.NoArgsConstructor;
 @DiscriminatorValue("USER")
 public class User extends AbstractUser {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_no", nullable = false)
-    private Company company;
+
 
     @Column(name = "user_name", nullable = false)
     private String name;

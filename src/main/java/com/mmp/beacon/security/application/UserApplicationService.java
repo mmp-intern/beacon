@@ -20,7 +20,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -42,36 +41,16 @@ public class UserApplicationService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails) {
             CustomUserDetails userDetail = (CustomUserDetails) auth.getPrincipal();
-            AbstractUser user = abstractUserRepository.findByUserId(userDetail.getUsername())
+            return abstractUserRepository.findByUserId(userDetail.getUsername())
                     .orElseThrow(() -> new IllegalStateException("User not found."));
-            if (user.getCompany() == null) {
-                logger.error("User {} does not belong to any company.", user.getUserId());
-                throw new IllegalStateException("Authenticated user does not belong to any company.");
-            }
-            return user;
         }
         return null;
     }
 
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(String userId) {
-        AbstractUser currentUser = getCurrentUser();
-        if (currentUser == null) {
-            throw new IllegalArgumentException("Authentication required.");
-        }
-
         AbstractUser user = abstractUserRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
-
-        if (!currentUser.getUserId().equals(userId)) {
-            if (currentUser.getCompany() == null || user.getCompany() == null ||
-                    !currentUser.getCompany().getId().equals(user.getCompany().getId())) {
-                logger.error("Access denied: 현재 사용자 회사 ID = {}, 조회하려는 사용자 회사 ID = {}",
-                        currentUser.getCompany() != null ? currentUser.getCompany().getId() : "null",
-                        user.getCompany() != null ? user.getCompany().getId() : "null");
-                throw new IllegalArgumentException("다른 회사의 프로필을 볼 수 없습니다.");
-            }
-        }
         return createUserProfileResponse(user);
     }
 
@@ -86,34 +65,41 @@ public class UserApplicationService {
                 throw new IllegalArgumentException("Authentication required.");
             }
 
-            Company company = companyRepository.findByName(userDto.getCompanyName())
-                    .orElseThrow(() -> new IllegalArgumentException("Company not found."));
+            Company company = null;
 
-            if (!currentUser.getCompany().getId().equals(company.getId())) {
-                throw new IllegalArgumentException("Access denied: Cannot create account for another company.");
-            }
-
-            if (currentUser.getRole() == UserRole.SUPER_ADMIN ||
-                    (currentUser.getRole() == UserRole.ADMIN && role == UserRole.USER)) {
-                AbstractUser user;
-                switch (role) {
-                    case SUPER_ADMIN:
-                        user = new SuperAdmin(userDto.getUserId(), encPassword, role, company);
-                        break;
-                    case ADMIN:
-                        user = new Admin(userDto.getUserId(), encPassword, role, company);
-                        break;
-                    case USER:
-                        user = new User(userDto.getUserId(), encPassword, role, company, userDto.getName(), userDto.getPhone(), userDto.getEmail(), userDto.getPosition());
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid role.");
+            if (currentUser.getRole() == UserRole.SUPER_ADMIN) {
+                // 슈퍼 관리자는 모든 역할을 생성할 수 있으며 회사 유효성 검사를 한다.
+                if (userDto.getCompany() == null || userDto.getCompany().isEmpty()) {
+                    throw new IllegalArgumentException("Company name cannot be null or empty for SUPER_ADMIN.");
                 }
-                abstractUserRepository.save(user);
-                logger.info("User registration successful: {}", userDto.getUserId());
+                company = companyRepository.findByName(userDto.getCompany())
+                        .orElseThrow(() -> new IllegalArgumentException("Company not found."));
+            } else if (currentUser.getRole() == UserRole.ADMIN) {
+                // 관리자 역할일 경우 USER 역할만 생성 가능하게 설정
+                if (role != UserRole.USER) {
+                    throw new IllegalArgumentException("Invalid role or insufficient permissions: Only USER role can be created by ADMIN.");
+                }
+                company = currentUser.getCompany();
             } else {
-                throw new IllegalArgumentException("Invalid role or insufficient permissions.");
+                throw new IllegalArgumentException("Insufficient permissions.");
             }
+
+            AbstractUser user;
+            switch (role) {
+                case SUPER_ADMIN:
+                    user = new SuperAdmin(userDto.getUserId(), encPassword, role, company);
+                    break;
+                case ADMIN:
+                    user = new Admin(userDto.getUserId(), encPassword, role, company, userDto.getName());
+                    break;
+                case USER:
+                    user = new User(userDto.getUserId(), encPassword, role, company, userDto.getName(), userDto.getEmail(), userDto.getPhone(), userDto.getPosition());
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid role.");
+            }
+            abstractUserRepository.save(user);
+            logger.info("User registration successful: {}", userDto.getUserId());
         } catch (IllegalArgumentException e) {
             logger.error("Invalid role or insufficient permissions: {}", userDto.getRole(), e);
             throw new IllegalArgumentException("Invalid role or insufficient permissions: " + userDto.getRole());
@@ -125,6 +111,7 @@ public class UserApplicationService {
             throw new RuntimeException("Registration failed: " + e.getMessage(), e);
         }
     }
+
 
     public Map<String, String> authenticate(LoginRequest userDto) {
         logger.info("Authenticating user: {}", userDto.getUserId());
@@ -194,25 +181,27 @@ public class UserApplicationService {
     }
 
     private UserProfileResponse createUserProfileResponse(AbstractUser user) {
-        String email = "";
-        String name = "";
-        String position = "";
-        String phone = "";
-
         if (user instanceof User) {
-            email = ((User) user).getEmail();
-            name = ((User) user).getName();
-            position = ((User) user).getPosition();
-            phone = ((User) user).getPhone();
+            User specificUser = (User) user;
+            return new UserProfileResponse(
+                    user.getUserId(),
+                    specificUser.getEmail(),
+                    specificUser.getPosition(),
+                    specificUser.getName(),
+                    specificUser.getPhone(),
+                    user.getCompany().getName(),
+                    user.getRole().name()
+            );
+        } else {
+            return new UserProfileResponse(
+                    user.getUserId(),
+                    "",
+                    "",
+                    "",
+                    "",
+                    user.getCompany().getName(),
+                    user.getRole().name()
+            );
         }
-
-        return new UserProfileResponse(
-                user.getUserId(),
-                email,
-                position,
-                name,
-                phone,
-                user.getCompany() != null ? user.getCompany().getName() : "",
-                user.getRole().name());
     }
 }

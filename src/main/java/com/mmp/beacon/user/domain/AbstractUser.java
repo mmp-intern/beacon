@@ -40,16 +40,17 @@ public abstract class AbstractUser extends BaseEntity {
     @JoinColumn(name = "company_no", nullable = false)
     private Company company;
 
+
+
+    public List<GrantedAuthority> getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority(this.getRole().name()));
+    }
+
     public AbstractUser(String userId, String password, UserRole role, Company company) {
         this.userId = userId;
         this.password = password;
         this.role = role;
         this.company = company;
 
-}
-
-    public List<GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(this.getRole().name()));
     }
-
 }

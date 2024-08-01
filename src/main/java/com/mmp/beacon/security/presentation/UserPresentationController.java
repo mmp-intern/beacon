@@ -3,10 +3,10 @@ package com.mmp.beacon.security.presentation;
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
 import com.mmp.beacon.security.application.CustomUserDetails;
+import com.mmp.beacon.security.application.UserApplicationService;
 import com.mmp.beacon.security.presentation.request.CreateUserRequest;
 import com.mmp.beacon.security.presentation.request.LoginRequest;
 import com.mmp.beacon.security.query.response.UserProfileResponse;
-import com.mmp.beacon.security.application.UserApplicationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -51,7 +51,7 @@ public class UserPresentationController {
         }
 
         try {
-            Optional<Company> companyOptional = companyRepository.findByName(userDto.getCompanyName());
+            Optional<Company> companyOptional = companyRepository.findByName(userDto.getCompany());
             if (companyOptional.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("유효하지 않은 회사 이름입니다.");
             }
@@ -65,7 +65,7 @@ public class UserPresentationController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: " + e.getMessage());
         } catch (Exception e) {
             logger.error("등록 실패: ", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: 시스템 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: 생성할 수 없습니다.");
         }
     }
 

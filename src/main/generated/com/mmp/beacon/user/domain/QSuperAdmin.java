@@ -24,6 +24,7 @@ public class QSuperAdmin extends EntityPathBase<SuperAdmin> {
 
     public final QAbstractUser _super;
 
+    // inherited
     public final com.mmp.beacon.company.domain.QCompany company;
 
     //inherited
@@ -63,7 +64,7 @@ public class QSuperAdmin extends EntityPathBase<SuperAdmin> {
     public QSuperAdmin(Class<? extends SuperAdmin> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this._super = new QAbstractUser(type, metadata, inits);
-        this.company = inits.isInitialized("company") ? new com.mmp.beacon.company.domain.QCompany(forProperty("company")) : null;
+        this.company = _super.company;
         this.createAt = _super.createAt;
         this.id = _super.id;
         this.password = _super.password;
