@@ -1,7 +1,7 @@
 package com.mmp.beacon.user.domain;
 
-import com.mmp.beacon.company.domain.Company;
-import jakarta.persistence.*;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +14,7 @@ public class SuperAdmin extends AbstractUser {
 
 
 
-    public SuperAdmin(String userId, String password, UserRole role, Company company) {
-        super(userId, password, role, company);
+    public SuperAdmin(String userId, String password, UserRole role) {
+        super(userId, password, role);
     }
 }

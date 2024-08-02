@@ -22,36 +22,35 @@ public class QUser extends EntityPathBase<User> {
 
     public static final QUser user = new QUser("user");
 
-    public final QAbstractUser _super;
+    public final QAbstractUser _super = new QAbstractUser(this);
 
-    // inherited
     public final com.mmp.beacon.company.domain.QCompany company;
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> createAt;
+    public final DateTimePath<java.time.LocalDateTime> createAt = _super.createAt;
 
     public final StringPath email = createString("email");
 
     //inherited
-    public final NumberPath<Long> id;
+    public final NumberPath<Long> id = _super.id;
 
     public final StringPath name = createString("name");
 
     //inherited
-    public final StringPath password;
+    public final StringPath password = _super.password;
 
     public final StringPath phone = createString("phone");
 
     public final StringPath position = createString("position");
 
     //inherited
-    public final EnumPath<UserRole> role;
+    public final EnumPath<UserRole> role = _super.role;
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> updateAt;
+    public final DateTimePath<java.time.LocalDateTime> updateAt = _super.updateAt;
 
     //inherited
-    public final StringPath userId;
+    public final StringPath userId = _super.userId;
 
     public QUser(String variable) {
         this(User.class, forVariable(variable), INITS);
@@ -71,14 +70,7 @@ public class QUser extends EntityPathBase<User> {
 
     public QUser(Class<? extends User> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this._super = new QAbstractUser(type, metadata, inits);
-        this.company = _super.company;
-        this.createAt = _super.createAt;
-        this.id = _super.id;
-        this.password = _super.password;
-        this.role = _super.role;
-        this.updateAt = _super.updateAt;
-        this.userId = _super.userId;
+        this.company = inits.isInitialized("company") ? new com.mmp.beacon.company.domain.QCompany(forProperty("company")) : null;
     }
 
 }

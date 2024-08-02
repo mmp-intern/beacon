@@ -2,11 +2,15 @@ package com.mmp.beacon.security.application;
 
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
+import com.mmp.beacon.security.presentation.request.AdminCreateRequest;
 import com.mmp.beacon.security.presentation.request.CreateUserRequest;
 import com.mmp.beacon.security.presentation.request.LoginRequest;
 import com.mmp.beacon.security.provider.JwtTokenProvider;
 import com.mmp.beacon.security.query.response.UserProfileResponse;
-import com.mmp.beacon.user.domain.*;
+import com.mmp.beacon.user.domain.AbstractUser;
+import com.mmp.beacon.user.domain.Admin;
+import com.mmp.beacon.user.domain.User;
+import com.mmp.beacon.user.domain.UserRole;
 import com.mmp.beacon.user.domain.repository.AbstractUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -49,8 +53,46 @@ public class UserApplicationService {
 
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(String userId) {
+        AbstractUser currentUser = getCurrentUser();
         AbstractUser user = abstractUserRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+
+        // 슈퍼 관리자와 관리자가 자신의 프로필을 조회하려고 할 때 예외를 던짐
+        if (user.getUserId().equals(currentUser.getUserId()) &&
+                (user.getRole() == UserRole.SUPER_ADMIN || user.getRole() == UserRole.ADMIN)) {
+            throw new IllegalArgumentException("Profile retrieval not allowed for this role.");
+        }
+
+        // 관리자와 사용자는 자신이 속한 회사의 USER만 조회할 수 있음
+        Company currentUserCompany = null;
+        Company userCompany = null;
+
+        if (currentUser instanceof Admin) {
+            currentUserCompany = ((Admin) currentUser).getCompany();
+        } else if (currentUser instanceof User) {
+            currentUserCompany = ((User) currentUser).getCompany();
+        }
+
+        if (user instanceof Admin) {
+            userCompany = ((Admin) user).getCompany();
+        } else if (user instanceof User) {
+            userCompany = ((User) user).getCompany();
+        }
+
+        if (currentUserCompany == null || userCompany == null || !currentUserCompany.equals(userCompany)) {
+            throw new IllegalArgumentException("Access denied: You can only view users from your own company.");
+        }
+
+        if (user.getRole() != UserRole.USER) {
+            throw new IllegalArgumentException("Access denied: Only USER profiles can be viewed.");
+        }
+
+        // 슈퍼 관리자와 관리자는 오직 USER 역할을 가진 사용자만 조회할 수 있음
+        if ((currentUser.getRole() == UserRole.SUPER_ADMIN || currentUser.getRole() == UserRole.ADMIN) &&
+                user.getRole() != UserRole.USER) {
+            throw new IllegalArgumentException("Access denied: Only USER profiles can be viewed.");
+        }
+
         return createUserProfileResponse(user);
     }
 
@@ -68,36 +110,32 @@ public class UserApplicationService {
             Company company = null;
 
             if (currentUser.getRole() == UserRole.SUPER_ADMIN) {
-                // 슈퍼 관리자는 모든 역할을 생성할 수 있으며 회사 유효성 검사를 한다.
+                // 슈퍼 관리자는 USER 또는 ADMIN 역할만 생성 가능하게 설정
+                if (role != UserRole.USER && role != UserRole.ADMIN) {
+                    throw new IllegalArgumentException("Invalid role or insufficient permissions: SUPER_ADMIN can only create USER or ADMIN roles.");
+                }
                 if (userDto.getCompany() == null || userDto.getCompany().isEmpty()) {
                     throw new IllegalArgumentException("Company name cannot be null or empty for SUPER_ADMIN.");
                 }
                 company = companyRepository.findByName(userDto.getCompany())
                         .orElseThrow(() -> new IllegalArgumentException("Company not found."));
             } else if (currentUser.getRole() == UserRole.ADMIN) {
-                // 관리자 역할일 경우 USER 역할만 생성 가능하게 설정
+                // 관리자는 자신이 속한 회사의 사용자만 생성 가능
                 if (role != UserRole.USER) {
                     throw new IllegalArgumentException("Invalid role or insufficient permissions: Only USER role can be created by ADMIN.");
                 }
-                company = currentUser.getCompany();
+                company = ((Admin) currentUser).getCompany();
+
+                // 관리자가 다른 회사의 사용자를 생성하려고 할 때 예외 발생
+                if (!company.getName().equals(userDto.getCompany())) {
+                    throw new IllegalArgumentException("Admin can only create users within their own company.");
+                }
             } else {
                 throw new IllegalArgumentException("Insufficient permissions.");
             }
 
-            AbstractUser user;
-            switch (role) {
-                case SUPER_ADMIN:
-                    user = new SuperAdmin(userDto.getUserId(), encPassword, role, company);
-                    break;
-                case ADMIN:
-                    user = new Admin(userDto.getUserId(), encPassword, role, company, userDto.getName());
-                    break;
-                case USER:
-                    user = new User(userDto.getUserId(), encPassword, role, company, userDto.getName(), userDto.getEmail(), userDto.getPhone(), userDto.getPosition());
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid role.");
-            }
+
+            AbstractUser user = new User(userDto.getUserId(), encPassword, role, company, userDto.getName(), userDto.getEmail(), userDto.getPhone(), userDto.getPosition());
             abstractUserRepository.save(user);
             logger.info("User registration successful: {}", userDto.getUserId());
         } catch (IllegalArgumentException e) {
@@ -112,6 +150,39 @@ public class UserApplicationService {
         }
     }
 
+    @Transactional
+    public void registerAdmin(AdminCreateRequest adminDto) {
+        try {
+            String encPassword = bCryptPasswordEncoder.encode(adminDto.getPassword());
+            UserRole role = UserRole.valueOf(adminDto.getRole().toUpperCase());
+
+            AbstractUser currentUser = getCurrentUser();
+            if (currentUser == null) {
+                throw new IllegalArgumentException("Authentication required.");
+            }
+
+            Company company = companyRepository.findByName(adminDto.getCompany())
+                    .orElseThrow(() -> new IllegalArgumentException("Company not found."));
+
+            if (role != UserRole.ADMIN) {
+                throw new IllegalArgumentException("Invalid role or insufficient permissions: Only ADMIN role can be created.");
+            }
+
+            AbstractUser user = new Admin(adminDto.getUserId(), encPassword, role, company);
+
+            abstractUserRepository.save(user);
+            logger.info("Admin registration successful: {}", adminDto.getUserId());
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid role or insufficient permissions: {}", adminDto.getRole(), e);
+            throw new IllegalArgumentException("Invalid role or insufficient permissions: " + adminDto.getRole());
+        } catch (DataIntegrityViolationException e) {
+            logger.error("Duplicate entry error: ", e);
+            throw new DataIntegrityViolationException("Duplicate entry: " + adminDto.getUserId());
+        } catch (Exception e) {
+            logger.error("Registration failed: ", e);
+            throw new RuntimeException("Registration failed: " + e.getMessage(), e);
+        }
+    }
 
     public Map<String, String> authenticate(LoginRequest userDto) {
         logger.info("Authenticating user: {}", userDto.getUserId());
@@ -168,17 +239,27 @@ public class UserApplicationService {
         AbstractUser userToDelete = abstractUserRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found."));
 
-        if (!currentUser.getCompany().getId().equals(userToDelete.getCompany().getId())) {
-            throw new IllegalArgumentException("Access denied: Cannot delete user from another company.");
-        }
+        if (currentUserRole == UserRole.ADMIN) {
+            if (userToDelete.getRole() != UserRole.USER) {
+                throw new IllegalArgumentException("Insufficient permissions: Cannot delete this user.");
+            }
 
-        if (currentUserRole == UserRole.ADMIN && userToDelete.getRole() != UserRole.USER) {
-            throw new IllegalArgumentException("Insufficient permissions: Cannot delete this user.");
+            // 관리자는 자신이 소속된 회사의 USER만 삭제할 수 있음
+            if (!(currentUser instanceof Admin) || !(userToDelete instanceof User)) {
+                throw new IllegalArgumentException("Insufficient permissions: Admins can only delete users from their own company.");
+            }
+
+            Company currentUserCompany = ((Admin) currentUser).getCompany();
+            Company userCompany = ((User) userToDelete).getCompany();
+            if (!currentUserCompany.equals(userCompany)) {
+                throw new IllegalArgumentException("Access denied: Admins can only delete users from their own company.");
+            }
         }
 
         abstractUserRepository.delete(userToDelete);
         logger.info("User deletion successful: {}", userId);
     }
+
 
     private UserProfileResponse createUserProfileResponse(AbstractUser user) {
         if (user instanceof User) {
@@ -189,19 +270,11 @@ public class UserApplicationService {
                     specificUser.getPosition(),
                     specificUser.getName(),
                     specificUser.getPhone(),
-                    user.getCompany().getName(),
+                    specificUser.getCompany().getName(),
                     user.getRole().name()
             );
         } else {
-            return new UserProfileResponse(
-                    user.getUserId(),
-                    "",
-                    "",
-                    "",
-                    "",
-                    user.getCompany().getName(),
-                    user.getRole().name()
-            );
+            throw new IllegalArgumentException("Profile retrieval not allowed for this role.");
         }
     }
 }

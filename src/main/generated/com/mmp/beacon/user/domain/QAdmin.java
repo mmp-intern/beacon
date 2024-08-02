@@ -22,30 +22,27 @@ public class QAdmin extends EntityPathBase<Admin> {
 
     public static final QAdmin admin = new QAdmin("admin");
 
-    public final QAbstractUser _super;
+    public final QAbstractUser _super = new QAbstractUser(this);
 
-    // inherited
     public final com.mmp.beacon.company.domain.QCompany company;
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> createAt;
+    public final DateTimePath<java.time.LocalDateTime> createAt = _super.createAt;
 
     //inherited
-    public final NumberPath<Long> id;
-
-    public final StringPath name = createString("name");
+    public final NumberPath<Long> id = _super.id;
 
     //inherited
-    public final StringPath password;
+    public final StringPath password = _super.password;
 
     //inherited
-    public final EnumPath<UserRole> role;
+    public final EnumPath<UserRole> role = _super.role;
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> updateAt;
+    public final DateTimePath<java.time.LocalDateTime> updateAt = _super.updateAt;
 
     //inherited
-    public final StringPath userId;
+    public final StringPath userId = _super.userId;
 
     public QAdmin(String variable) {
         this(Admin.class, forVariable(variable), INITS);
@@ -65,14 +62,7 @@ public class QAdmin extends EntityPathBase<Admin> {
 
     public QAdmin(Class<? extends Admin> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this._super = new QAbstractUser(type, metadata, inits);
-        this.company = _super.company;
-        this.createAt = _super.createAt;
-        this.id = _super.id;
-        this.password = _super.password;
-        this.role = _super.role;
-        this.updateAt = _super.updateAt;
-        this.userId = _super.userId;
+        this.company = inits.isInitialized("company") ? new com.mmp.beacon.company.domain.QCompany(forProperty("company")) : null;
     }
 
 }

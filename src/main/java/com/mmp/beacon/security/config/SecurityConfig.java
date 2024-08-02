@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .sessionManagement(config -> config.sessionCreationPolicy(STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/login").permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/v1/admin/**").hasAnyAuthority("SUPER_ADMIN")
                         .requestMatchers("/api/v1/superadmin/**").hasAuthority("SUPER_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/profile").authenticated()

@@ -12,14 +12,12 @@ import lombok.NoArgsConstructor;
 @DiscriminatorValue("ADMIN")
 public class Admin extends AbstractUser {
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_no", nullable = false)
+    private Company company;
 
-    @Column(name = "user_name", nullable = false)
-    private String name;
-
-    public Admin(String userId, String password, UserRole role, Company company, String name) {
-        super(userId, password, role, company);
-        this.name = name;
-
-
+    public Admin(String userId, String password, UserRole role, Company company) {
+        super(userId, password, role);
+        this.company = company;
     }
 }

@@ -4,6 +4,7 @@ import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
 import com.mmp.beacon.security.application.CustomUserDetails;
 import com.mmp.beacon.security.application.UserApplicationService;
+import com.mmp.beacon.security.presentation.request.AdminCreateRequest;
 import com.mmp.beacon.security.presentation.request.CreateUserRequest;
 import com.mmp.beacon.security.presentation.request.LoginRequest;
 import com.mmp.beacon.security.query.response.UserProfileResponse;
@@ -68,6 +69,36 @@ public class UserPresentationController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: 생성할 수 없습니다.");
         }
     }
+
+    @PostMapping("/admin")
+    public ResponseEntity<String> createAdmin(@Valid @RequestBody AdminCreateRequest adminDto) {
+        logger.info("관리자 등록 요청 수신: {}", adminDto);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            CustomUserDetails currentUserDetails = (CustomUserDetails) auth.getPrincipal();
+            logger.debug("현재 사용자: {}", currentUserDetails.getUsername());
+            logger.debug("현재 사용자 역할: {}", currentUserDetails.getUser().getRole().name());
+        } else {
+            logger.warn("인증되지 않은 사용자");
+        }
+
+        try {
+            userApplicationService.registerAdmin(adminDto);
+            return ResponseEntity.ok("관리자 등록 성공");
+        } catch (DataIntegrityViolationException e) {
+            logger.error("중복 항목 오류: ", e);
+            return ResponseEntity.status(HttpStatus.
+                    BAD_REQUEST).body("등록 실패: 관리자 ID가 중복되었습니다.");
+        } catch (IllegalArgumentException e) {
+            logger.error("잘못된 역할 또는 권한 오류: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("등록 실패: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: 생성할 수 없습니다.");
+        }
+    }
+
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody LoginRequest userDto) {

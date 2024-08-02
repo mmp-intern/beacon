@@ -7,7 +7,6 @@ import com.querydsl.core.types.dsl.*;
 import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
-import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
@@ -18,59 +17,38 @@ public class QSuperAdmin extends EntityPathBase<SuperAdmin> {
 
     private static final long serialVersionUID = 1453567450L;
 
-    private static final PathInits INITS = PathInits.DIRECT2;
-
     public static final QSuperAdmin superAdmin = new QSuperAdmin("superAdmin");
 
-    public final QAbstractUser _super;
-
-    // inherited
-    public final com.mmp.beacon.company.domain.QCompany company;
+    public final QAbstractUser _super = new QAbstractUser(this);
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> createAt;
+    public final DateTimePath<java.time.LocalDateTime> createAt = _super.createAt;
 
     //inherited
-    public final NumberPath<Long> id;
+    public final NumberPath<Long> id = _super.id;
 
     //inherited
-    public final StringPath password;
+    public final StringPath password = _super.password;
 
     //inherited
-    public final EnumPath<UserRole> role;
+    public final EnumPath<UserRole> role = _super.role;
 
     //inherited
-    public final DateTimePath<java.time.LocalDateTime> updateAt;
+    public final DateTimePath<java.time.LocalDateTime> updateAt = _super.updateAt;
 
     //inherited
-    public final StringPath userId;
+    public final StringPath userId = _super.userId;
 
     public QSuperAdmin(String variable) {
-        this(SuperAdmin.class, forVariable(variable), INITS);
+        super(SuperAdmin.class, forVariable(variable));
     }
 
     public QSuperAdmin(Path<? extends SuperAdmin> path) {
-        this(path.getType(), path.getMetadata(), PathInits.getFor(path.getMetadata(), INITS));
+        super(path.getType(), path.getMetadata());
     }
 
     public QSuperAdmin(PathMetadata metadata) {
-        this(metadata, PathInits.getFor(metadata, INITS));
-    }
-
-    public QSuperAdmin(PathMetadata metadata, PathInits inits) {
-        this(SuperAdmin.class, metadata, inits);
-    }
-
-    public QSuperAdmin(Class<? extends SuperAdmin> type, PathMetadata metadata, PathInits inits) {
-        super(type, metadata, inits);
-        this._super = new QAbstractUser(type, metadata, inits);
-        this.company = _super.company;
-        this.createAt = _super.createAt;
-        this.id = _super.id;
-        this.password = _super.password;
-        this.role = _super.role;
-        this.updateAt = _super.updateAt;
-        this.userId = _super.userId;
+        super(SuperAdmin.class, metadata);
     }
 
 }
