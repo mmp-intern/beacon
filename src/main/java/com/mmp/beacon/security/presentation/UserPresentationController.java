@@ -12,8 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,28 +26,27 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1")
 @Validated
 @RequiredArgsConstructor
 public class UserPresentationController {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserPresentationController.class);
-
     private final UserApplicationService userApplicationService;
     private final CompanyRepository companyRepository;
 
     @PostMapping("/users")
     public ResponseEntity<String> createUser(@Valid @RequestBody CreateUserRequest userDto) {
-        logger.info("사용자 등록 요청 수신: {}", userDto);
+        log.info("사용자 등록 요청 수신: {}", userDto);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
             CustomUserDetails currentUserDetails = (CustomUserDetails) auth.getPrincipal();
-            logger.debug("현재 사용자: {}", currentUserDetails.getUsername());
-            logger.debug("현재 사용자 역할: {}", currentUserDetails.getUser().getRole().name());
+            log.debug("현재 사용자: {}", currentUserDetails.getUsername());
+            log.debug("현재 사용자 역할: {}", currentUserDetails.getUser().getRole().name());
         } else {
-            logger.warn("인증되지 않은 사용자");
+            log.warn("인증되지 않은 사용자");
         }
 
         try {
@@ -59,50 +57,48 @@ public class UserPresentationController {
             userApplicationService.register(userDto);
             return ResponseEntity.ok("사용자 등록 성공");
         } catch (DataIntegrityViolationException e) {
-            logger.error("중복 항목 오류: ", e);
+            log.error("중복 항목 오류: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: 사용자 ID가 중복되었습니다.");
         } catch (IllegalArgumentException e) {
-            logger.error("잘못된 역할 또는 권한 오류: ", e);
+            log.error("잘못된 역할 또는 권한 오류: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("등록 실패: ", e);
+            log.error("등록 실패: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: 생성할 수 없습니다.");
         }
     }
 
     @PostMapping("/admin")
     public ResponseEntity<String> createAdmin(@Valid @RequestBody AdminCreateRequest adminDto) {
-        logger.info("관리자 등록 요청 수신: {}", adminDto);
+        log.info("관리자 등록 요청 수신: {}", adminDto);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
             CustomUserDetails currentUserDetails = (CustomUserDetails) auth.getPrincipal();
-            logger.debug("현재 사용자: {}", currentUserDetails.getUsername());
-            logger.debug("현재 사용자 역할: {}", currentUserDetails.getUser().getRole().name());
+            log.debug("현재 사용자: {}", currentUserDetails.getUsername());
+            log.debug("현재 사용자 역할: {}", currentUserDetails.getUser().getRole().name());
         } else {
-            logger.warn("인증되지 않은 사용자");
+            log.warn("인증되지 않은 사용자");
         }
 
         try {
             userApplicationService.registerAdmin(adminDto);
             return ResponseEntity.ok("관리자 등록 성공");
         } catch (DataIntegrityViolationException e) {
-            logger.error("중복 항목 오류: ", e);
-            return ResponseEntity.status(HttpStatus.
-                    BAD_REQUEST).body("등록 실패: 관리자 ID가 중복되었습니다.");
+            log.error("중복 항목 오류: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: 관리자 ID가 중복되었습니다.");
         } catch (IllegalArgumentException e) {
-            logger.error("잘못된 역할 또는 권한 오류: ", e);
+            log.error("잘못된 역할 또는 권한 오류: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("등록 실패: ", e);
+            log.error("등록 실패: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("등록 실패: 생성할 수 없습니다.");
         }
     }
 
-
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody LoginRequest userDto) {
-        logger.info("로그인 요청 수신: 사용자 ID: {}", userDto.getUserId());
+        log.info("로그인 요청 수신: 사용자 ID: {}", userDto.getUserId());
         Map<String, String> tokens = userApplicationService.authenticate(userDto);
         if (tokens != null) {
             return ResponseEntity.ok(tokens);
@@ -133,7 +129,7 @@ public class UserPresentationController {
 
             return ResponseEntity.ok(userProfile);
         } catch (IllegalStateException e) {
-            logger.error("Error in getProfile: ", e);
+            log.error("Error in getProfile: ", e);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
@@ -152,7 +148,7 @@ public class UserPresentationController {
 
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<String> deleteUser(@PathVariable("userId") String userId) {
-        logger.info("사용자 삭제 요청 수신: {}", userId);
+        log.info("사용자 삭제 요청 수신: {}", userId);
         try {
             userApplicationService.deleteUser(userId);
             return ResponseEntity.ok("사용자 삭제 성공");
@@ -161,7 +157,7 @@ public class UserPresentationController {
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
-            logger.error("사용자 삭제 실패: ", e);
+            log.error("사용자 삭제 실패: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("사용자 삭제 실패: " + e.getMessage());
         }
     }

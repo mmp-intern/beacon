@@ -5,7 +5,6 @@ import com.mmp.beacon.security.handler.JwtAuthenticationFailureHandler;
 import com.mmp.beacon.security.handler.JwtAuthenticationSuccessHandler;
 import com.mmp.beacon.security.provider.JwtAuthenticationProvider;
 import com.mmp.beacon.security.provider.JwtTokenProvider;
-import com.mmp.beacon.security.token.JwtAuthenticationEntryPoint;
 import com.mmp.beacon.user.domain.repository.AbstractUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

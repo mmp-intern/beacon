@@ -8,8 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,11 +18,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailService userDetailService;
 
@@ -39,12 +38,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwtToken = requestTokenHeader.substring(7);
             try {
                 username = jwtTokenProvider.getUsernameFromToken(jwtToken);
-                logger.debug("Extracted username from JWT: {}", username);
+                log.debug("Extracted username from JWT: {}", username);
             } catch (Exception e) {
-                logger.error("Error extracting JWT token", e);
+                log.error("Error extracting JWT token", e);
             }
         } else {
-            logger.warn("JWT token does not start with Bearer String: {}", requestTokenHeader);
+            log.warn("JWT token does not start with Bearer String: {}", requestTokenHeader);
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -56,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 CustomUserDetails customUserDetails = (CustomUserDetails) userDetails;
-                logger.debug("Set authentication in security context for: {}", customUserDetails.getUsername());
+                log.debug("Set authentication in security context for: {}", customUserDetails.getUsername());
             }
         }
 
