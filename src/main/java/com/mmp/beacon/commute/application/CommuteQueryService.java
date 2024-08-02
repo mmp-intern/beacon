@@ -89,18 +89,6 @@ public class CommuteQueryService {
 
         return commuteRepository.findCommuteStatistics(companyId, startDate, endDate,
                 command.searchTerm(), command.searchBy(), command.pageable());
-
-/*        Page<User> users = userRepository.findByCompanyIdAndSearchTerm(
-                companyId, command.searchTerm(), command.searchBy(), command.pageable());
-
-        return users.map(userPage -> {
-            LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(timeService.nowDate());
-            LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(timeService.nowDate());
-
-            CommuteStatisticsResponse.UserInfo userInfo = new CommuteStatisticsResponse.UserInfo(userPage.getId(), userPage.getUserId(), userPage.getName());
-            CommuteStatisticsResponse.CommuteStatistics commuteStatistics = calculateStatistics(userPage, startDate, endDate);
-            return new CommuteStatisticsResponse(userInfo, commuteStatistics);
-        });*/
     }
 
     private Long getCompanyId(AbstractUser abstractUser) {
