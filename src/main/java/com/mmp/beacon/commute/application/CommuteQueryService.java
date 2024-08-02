@@ -5,6 +5,7 @@ import com.mmp.beacon.commute.application.command.CommutePeriodCommand;
 import com.mmp.beacon.commute.domain.AttendanceStatus;
 import com.mmp.beacon.commute.domain.Commute;
 import com.mmp.beacon.commute.domain.repository.CommuteRepository;
+import com.mmp.beacon.commute.query.response.CommuteRecordInfo;
 import com.mmp.beacon.commute.query.response.CommuteRecordResponse;
 import com.mmp.beacon.commute.query.response.CommuteStatisticsResponse;
 import com.mmp.beacon.company.domain.Company;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Optional;
 
 @Service
@@ -52,13 +54,11 @@ public class CommuteQueryService {
         Long companyId = getCompanyId(user);
         LocalDate date = Optional.ofNullable(command.date()).orElse(timeService.nowDate());
 
-        Page<User> users = userRepository.findByCompanyIdAndSearchTerm(
-                companyId, command.searchTerm(), command.searchBy(), command.pageable());
+        Page<CommuteRecordInfo> commuteInfos = commuteRepository.findByCompanyIdAndDateAndSearchTerm(
+                companyId, date, command.searchTerm(), command.searchBy(), command.pageable()
+        );
 
-        return users.map(userPage -> {
-            Optional<Commute> commute = commuteRepository.findByUserAndDate(userPage, date);
-            return mapToCommuteRecordResponse(userPage, commute.orElse(null));
-        });
+        return commuteInfos.map(this::mapToCommuteRecordResponse);
     }
 
     @Transactional(readOnly = true)
@@ -66,8 +66,10 @@ public class CommuteQueryService {
         AbstractUser user = abstractUserRepository.findById(command.userId())
                 .orElseThrow(UserNotFoundException::new);
         Long companyId = getCompanyId(user);
-        LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(timeService.nowDate());
-        LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(timeService.nowDate());
+
+        LocalDate currentDate = timeService.nowDate();
+        LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(currentDate.withDayOfMonth(1));
+        LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(YearMonth.from(currentDate).atEndOfMonth());
 
         Page<Commute> commutes = commuteRepository.findByCompanyIdAndPeriodAndSearchTerm(
                 companyId, startDate, endDate, command.searchTerm(), command.searchBy(), command.pageable());
@@ -81,17 +83,12 @@ public class CommuteQueryService {
                 .orElseThrow(UserNotFoundException::new);
         Long companyId = getCompanyId(user);
 
-        Page<User> users = userRepository.findByCompanyIdAndSearchTerm(
-                companyId, command.searchTerm(), command.searchBy(), command.pageable());
+        LocalDate currentDate = timeService.nowDate();
+        LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(currentDate.withDayOfMonth(1));
+        LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(YearMonth.from(currentDate).atEndOfMonth());
 
-        return users.map(userPage -> {
-            LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(timeService.nowDate());
-            LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(timeService.nowDate());
-
-            CommuteStatisticsResponse.UserInfo userInfo = new CommuteStatisticsResponse.UserInfo(userPage.getId(), userPage.getUserId(), userPage.getName());
-            CommuteStatisticsResponse.CommuteStatistics commuteStatistics = calculateStatistics(userPage, startDate, endDate);
-            return new CommuteStatisticsResponse(userInfo, commuteStatistics);
-        });
+        return commuteRepository.findCommuteStatistics(companyId, startDate, endDate,
+                command.searchTerm(), command.searchBy(), command.pageable());
     }
 
     private Long getCompanyId(AbstractUser abstractUser) {
@@ -106,6 +103,25 @@ public class CommuteQueryService {
         } else {
             throw new SuperAdminAccessException("슈퍼 관리자는 별도의 API를 사용해야 합니다.");
         }
+    }
+
+    private CommuteRecordResponse mapToCommuteRecordResponse(CommuteRecordInfo info) {
+        CommuteRecordResponse.UserInfo userInfo = new CommuteRecordResponse.UserInfo(
+                info.getUserId(),
+                info.getUserLoginId(),
+                info.getUserName()
+        );
+
+        CommuteRecordResponse.CommuteInfo commuteInfo = (info.getCommuteId() != null) ? new CommuteRecordResponse.CommuteInfo(
+                info.getCommuteId(),
+                info.getDate(),
+                info.getStartTime(),
+                info.getEndTime(),
+                info.getAttendanceStatus(),
+                info.getWorkStatus()
+        ) : null;
+
+        return new CommuteRecordResponse(userInfo, commuteInfo);
     }
 
     private CommuteRecordResponse mapToCommuteRecordResponse(User user, Commute commute) {

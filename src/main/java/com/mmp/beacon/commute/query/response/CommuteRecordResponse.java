@@ -14,7 +14,8 @@ public record CommuteRecordResponse(
             Long id,
             String userId,
             String name
-    ) {}
+    ) {
+    }
 
     public record CommuteInfo(
             Long id,
@@ -23,5 +24,6 @@ public record CommuteRecordResponse(
             LocalTime endTime,
             AttendanceStatus attendanceStatus,
             WorkStatus workStatus
-    ) {}
+    ) {
+    }
 }
