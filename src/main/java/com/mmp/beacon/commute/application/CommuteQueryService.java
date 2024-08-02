@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Optional;
 
 @Service
@@ -65,8 +66,10 @@ public class CommuteQueryService {
         AbstractUser user = abstractUserRepository.findById(command.userId())
                 .orElseThrow(UserNotFoundException::new);
         Long companyId = getCompanyId(user);
-        LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(timeService.nowDate());
-        LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(timeService.nowDate());
+
+        LocalDate currentDate = timeService.nowDate();
+        LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(currentDate.withDayOfMonth(1));
+        LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(YearMonth.from(currentDate).atEndOfMonth());
 
         Page<Commute> commutes = commuteRepository.findByCompanyIdAndPeriodAndSearchTerm(
                 companyId, startDate, endDate, command.searchTerm(), command.searchBy(), command.pageable());
@@ -80,7 +83,14 @@ public class CommuteQueryService {
                 .orElseThrow(UserNotFoundException::new);
         Long companyId = getCompanyId(user);
 
-        Page<User> users = userRepository.findByCompanyIdAndSearchTerm(
+        LocalDate currentDate = timeService.nowDate();
+        LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(currentDate.withDayOfMonth(1));
+        LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(YearMonth.from(currentDate).atEndOfMonth());
+
+        return commuteRepository.findCommuteStatistics(companyId, startDate, endDate,
+                command.searchTerm(), command.searchBy(), command.pageable());
+
+/*        Page<User> users = userRepository.findByCompanyIdAndSearchTerm(
                 companyId, command.searchTerm(), command.searchBy(), command.pageable());
 
         return users.map(userPage -> {
@@ -90,7 +100,7 @@ public class CommuteQueryService {
             CommuteStatisticsResponse.UserInfo userInfo = new CommuteStatisticsResponse.UserInfo(userPage.getId(), userPage.getUserId(), userPage.getName());
             CommuteStatisticsResponse.CommuteStatistics commuteStatistics = calculateStatistics(userPage, startDate, endDate);
             return new CommuteStatisticsResponse(userInfo, commuteStatistics);
-        });
+        });*/
     }
 
     private Long getCompanyId(AbstractUser abstractUser) {

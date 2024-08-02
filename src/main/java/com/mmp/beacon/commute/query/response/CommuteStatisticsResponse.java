@@ -12,10 +12,10 @@ public record CommuteStatisticsResponse(
     }
 
     public record CommuteStatistics(
-            int presentDays,
-            int lateDays,
-            int absentDays,
-            int totalDays
+            long presentDays,
+            long lateDays,
+            long absentDays,
+            long totalDays
     ) {
     }
 }

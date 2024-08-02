@@ -2,6 +2,7 @@ package com.mmp.beacon.commute.domain.repository;
 
 import com.mmp.beacon.commute.domain.Commute;
 import com.mmp.beacon.commute.query.response.CommuteRecordInfo;
+import com.mmp.beacon.commute.query.response.CommuteStatisticsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -42,6 +43,15 @@ public interface CustomCommuteRepository {
     Page<CommuteRecordInfo> findByCompanyIdAndDateAndSearchTerm(
             Long companyId,
             LocalDate date,
+            String searchTerm,
+            String searchBy,
+            Pageable pageable
+    );
+
+    Page<CommuteStatisticsResponse> findCommuteStatistics(
+            Long companyId,
+            LocalDate startDate,
+            LocalDate endDate,
             String searchTerm,
             String searchBy,
             Pageable pageable
