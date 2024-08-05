@@ -241,7 +241,7 @@ public class UserApplicationService {
             }
 
             if (!isSameCompany(currentUser, userToDelete)) {
-                throw new IllegalArgumentException("접근 거부: 관리자만 자신의 회사의 사용자를 삭제할 수 있습니다.");
+                throw new IllegalArgumentException("접근 거부: 같은 회사의 사용자만 삭제할 수 있습니다.");
             }
         }
 
