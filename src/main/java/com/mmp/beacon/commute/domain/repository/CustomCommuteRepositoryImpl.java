@@ -132,6 +132,9 @@ public class CustomCommuteRepositoryImpl implements CustomCommuteRepository {
             Order direction = order.isAscending() ? Order.ASC : Order.DESC;
             String property = order.getProperty();
             switch (property) {
+                case "id":
+                    orderSpecifiers.add(new OrderSpecifier<>(direction, user.id));
+                    break;
                 case "userId":
                     orderSpecifiers.add(new OrderSpecifier<>(direction, user.userId));
                     break;
@@ -237,6 +240,9 @@ public class CustomCommuteRepositoryImpl implements CustomCommuteRepository {
             Order direction = order.isAscending() ? Order.ASC : Order.DESC;
             String property = order.getProperty();
             switch (property) {
+                case "id":
+                    orderSpecifiers.add(new OrderSpecifier<>(direction, user.id));
+                    break;
                 case "userId":
                     orderSpecifiers.add(new OrderSpecifier<>(direction, user.userId));
                     break;
