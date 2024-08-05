@@ -50,12 +50,19 @@ public class UserApplicationService {
         return null; // 인증되지 않은 경우 null 반환
     }
 
-    // 특정 사용자의 프로필 정보를 반환하는 메서드
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(String userId) {
         AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
         AbstractUser user = abstractUserRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("ID가 " + userId + "인 사용자를 찾을 수 없습니다.")); // 사용자 ID로 사용자 정보를 조회
+
+        // 슈퍼 어드민일 경우에도 USER 역할의 사용자만 조회할 수 있음
+        if (currentUser.getRole() == UserRole.SUPER_ADMIN) {
+            if (user.getRole() != UserRole.USER) {
+                throw new IllegalArgumentException("사용자만 조회할 수 있습니다.");
+            }
+            return createUserProfileResponse(user);
+        }
 
         // 권한 체크
         if (user.getUserId().equals(currentUser.getUserId()) &&
@@ -78,6 +85,7 @@ public class UserApplicationService {
 
         return createUserProfileResponse(user); // 사용자 프로필 응답 생성
     }
+
 
     // 사용자의 회사 정보를 반환하는 메서드
     private Company getUserCompany(AbstractUser user) {
