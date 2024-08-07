@@ -106,6 +106,7 @@ public class CompanyScheduleService implements ScheduleService {
         if (scheduledTask != null && !scheduledTask.isCancelled()) {
             log.info("회사({})의 기존 스케줄 작업을 취소합니다.", companyId);
             scheduledTask.cancel(false);
+            taskMap.remove(companyId);
         }
     }
 }
