@@ -4,7 +4,9 @@ import com.mmp.beacon.commute.application.CommuteService;
 import com.mmp.beacon.commute.application.TimeService;
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,6 +19,7 @@ import java.time.ZoneId;
 /**
  * 회사별 스케줄 작업을 관리하는 서비스 클래스입니다.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CompanyScheduleService implements ScheduleService {
@@ -27,11 +30,22 @@ public class CompanyScheduleService implements ScheduleService {
     private final CompanyRepository companyRepository;
 
     /**
+     * 서버 시작 시 스케줄 작업을 등록합니다.
+     */
+    @PostConstruct
+    public void init() {
+        log.info("서버 시작 시 스케줄 작업을 초기화합니다.");
+        scheduleDailyCompanyTasks();
+    }
+
+    /**
      * 매일 모든 회사의 출근 및 퇴근 시간을 기반으로 스케줄 작업을 등록합니다.
      */
     @Scheduled(cron = "0 0 0 * * *")
     public void scheduleDailyCompanyTasks() {
+        log.info("매일 회사별 스케줄 작업을 등록 시작");
         companyRepository.findAll().forEach(this::scheduleCompanyTasks);
+        log.info("매일 회사별 스케줄 작업을 등록 완료");
     }
 
     /**
@@ -41,8 +55,10 @@ public class CompanyScheduleService implements ScheduleService {
      */
     @Override
     public void scheduleCompanyTasks(Company company) {
+        log.info("회사({})의 스케줄 작업을 등록 시작", company.getId());
         scheduleTask(company.getStartTime(), () -> commuteService.markLateArrivals(company.getId()));
         scheduleTask(company.getEndTime(), () -> commuteService.markAbsentees(company.getId()));
+        log.info("회사({})의 스케줄 작업을 등록 완료", company.getId());
     }
 
     /**
@@ -52,7 +68,9 @@ public class CompanyScheduleService implements ScheduleService {
      */
     @Override
     public void rescheduleCompanyTasks(Company company) {
+        log.info("회사({})의 스케줄 작업을 재등록 시작", company.getId());
         scheduleCompanyTasks(company);
+        log.info("회사({})의 스케줄 작업 재등록 완료", company.getId());
     }
 
     /**
