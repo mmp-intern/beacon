@@ -7,10 +7,7 @@ import com.mmp.beacon.security.presentation.request.CreateUserRequest;
 import com.mmp.beacon.security.presentation.request.LoginRequest;
 import com.mmp.beacon.security.provider.JwtTokenProvider;
 import com.mmp.beacon.security.query.response.UserProfileResponse;
-import com.mmp.beacon.user.domain.AbstractUser;
-import com.mmp.beacon.user.domain.Admin;
-import com.mmp.beacon.user.domain.User;
-import com.mmp.beacon.user.domain.UserRole;
+import com.mmp.beacon.user.domain.*;
 import com.mmp.beacon.user.domain.repository.AbstractUserRepository;
 import com.mmp.beacon.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,23 +52,32 @@ public class UserApplicationService {
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(String userId) {
         AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
-        User user = userRepository.findByUserId(userId)
+        AbstractUser user = abstractUserRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("ID가 " + userId + "인 사용자를 찾을 수 없습니다.")); // 사용자 ID로 사용자 정보를 조회
 
-        // 슈퍼 어드민일 회사 제약 없이 사용자 조회 가능
+        // 조회하는 사람 A, 조회되는 사람 B
+        // A와 B가 동일 인물일 경우 조회 가능
+        if (currentUser.getUserId().equals(user.getUserId())) {
+            return createUserProfileResponse(user);
+        }
+
+        // A가 SuperAdmin일 경우 조회 가능
         if (currentUser.getRole() == UserRole.SUPER_ADMIN) {
             return createUserProfileResponse(user);
         }
 
-        // 관리자 또는 사용자인 경우 같은 회사인지 체크
-        Company currentUserCompany = getUserCompany(currentUser);
-        Company userCompany = getUserCompany(user);
+        // A가 Admin/User일 경우 B가 User이고 A와 B가 같은 회사일 경우 조회 가능
+        if (currentUser.getRole() == UserRole.ADMIN || currentUser.getRole() == UserRole.USER) {
+            if (user.getRole() == UserRole.USER) {
+                Company currentUserCompany = getUserCompany(currentUser);
+                Company userCompany = getUserCompany(user);
 
-        if (currentUserCompany == null || userCompany == null || !currentUserCompany.equals(userCompany)) {
-            throw new IllegalArgumentException("같은 회사의 사용자만 조회할 수 있습니다.");
+                if (currentUserCompany != null && userCompany != null && currentUserCompany.equals(userCompany)) {
+                    return createUserProfileResponse(user);
+                }
+            }
         }
-
-        return createUserProfileResponse(user); // 사용자 프로필 응답 생성
+        throw new IllegalArgumentException("같은 회사의 사용자만 조회할 수 있습니다.");
     }
 
 
@@ -140,21 +146,21 @@ public class UserApplicationService {
     @Transactional
     public void registerAdmin(AdminCreateRequest adminDto) {
 
-            String encPassword = bCryptPasswordEncoder.encode(adminDto.getPassword()); // 비밀번호 암호화
-            UserRole role = UserRole.ADMIN; // 역할을 항상 ADMIN으로 지정
+        String encPassword = bCryptPasswordEncoder.encode(adminDto.getPassword()); // 비밀번호 암호화
+        UserRole role = UserRole.ADMIN; // 역할을 항상 ADMIN으로 지정
 
-            AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
-            if (currentUser == null) {
-                throw new IllegalArgumentException("인증이 필요합니다.");
-            }
+        AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
+        if (currentUser == null) {
+            throw new IllegalArgumentException("인증이 필요합니다.");
+        }
 
-            Company company = companyRepository.findByName(adminDto.getCompany())
-                    .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다.")); // 회사 정보 조회
+        Company company = companyRepository.findByName(adminDto.getCompany())
+                .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다.")); // 회사 정보 조회
 
-            AbstractUser user = new Admin(adminDto.getUserId(), encPassword, role, company); // 새로운 관리자 객체 생성
+        AbstractUser user = new Admin(adminDto.getUserId(), encPassword, role, company); // 새로운 관리자 객체 생성
 
-            abstractUserRepository.save(user); // 관리자 저장
-            log.info("관리자 등록 성공: {}", adminDto.getUserId());
+        abstractUserRepository.save(user); // 관리자 저장
+        log.info("관리자 등록 성공: {}", adminDto.getUserId());
 
     }
 
@@ -252,8 +258,34 @@ public class UserApplicationService {
                     specificUser.getCompany().getName(),
                     user.getRole().name()
             );
+        } else if (user instanceof Admin) {
+            Admin specificAdmin = (Admin) user;
+            return new UserProfileResponse(
+                    user.getId(),
+                    user.getUserId(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    specificAdmin.getCompany().getId(),
+                    specificAdmin.getCompany().getName(),
+                    user.getRole().name()
+            );
+        } else if (user instanceof SuperAdmin) {
+            return new UserProfileResponse(
+                    user.getId(),
+                    user.getUserId(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    user.getRole().name()
+            );
         } else {
-            throw new IllegalArgumentException("프로필 조회가 허용되지 않습니다.");
+            return null; // 사용자 유형이 알 수 없는 경우 null 반환
         }
     }
 }
+
