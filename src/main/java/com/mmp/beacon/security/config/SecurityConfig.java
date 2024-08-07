@@ -56,6 +56,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers("/api/v1/commutes/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN", "USER")
                         .anyRequest().authenticated());
 
         http.addFilterBefore(loginProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
