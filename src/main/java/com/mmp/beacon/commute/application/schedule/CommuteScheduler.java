@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CommuteScheduler {
 
-    private CommuteService commuteService;
+    private final CommuteService commuteService;
 
     /**
      * 매 5분마다 자리 비움 또는 퇴근 상태를 업데이트합니다.

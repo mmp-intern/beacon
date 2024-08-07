@@ -104,6 +104,7 @@ public class CommuteService {
      * @param beaconData 비콘 데이터
      */
     private void handleExistingCommute(Commute commute, BeaconData beaconData) {
+        log.info("기존 출퇴근 기록을 갱신합니다. Commute ID: {}", commute.getId());
         commute.updateWorkStatus(WorkStatus.IN_OFFICE);
         commute.updateTimestamps(beaconData.earlyTimestamp().toLocalTime(), beaconData.lateTimestamp().toLocalTime());
         commuteRepository.save(commute);
@@ -133,6 +134,7 @@ public class CommuteService {
      * @param beaconData 비콘 데이터
      */
     private void markPresent(User user, BeaconData beaconData) {
+        log.info("사용자의 출근 기록을 생성합니다. 사용자 ID: {}", user.getId());
         commuteRepository.save(Commute.builder()
                 .user(user)
                 .date(beaconData.earlyTimestamp().toLocalDate())
@@ -157,6 +159,7 @@ public class CommuteService {
             log.info("오늘은 근무일이 아니어서 지각 처리를 중단합니다.");
             return;
         }
+        log.info("회사 ID {}에 대한 지각자를 기록합니다.", companyId);
         LocalDate today = timeService.nowDate();
         userRepository.findByCompanyId(companyId).stream()
                 .filter(user -> commuteRepository.findByUserAndDate(user, today).isEmpty())
@@ -170,6 +173,7 @@ public class CommuteService {
      * @param user 사용자 엔티티
      */
     private void markLateArrival(User user) {
+        log.info("사용자를 지각자로 기록합니다. 사용자 ID: {}", user.getId());
         commuteRepository.save(Commute.builder()
                 .user(user)
                 .date(timeService.nowDate())
@@ -198,6 +202,7 @@ public class CommuteService {
                 .ifPresent(commute -> {
                     if (commute.getWorkStatus() == WorkStatus.IN_OFFICE &&
                             nowMinus5Minutes.isAfter(commute.getEndedAt().atDate(today))) {
+                        log.info("사용자 ID {}가 자리를 비웠습니다.", user.getId());
                         commute.updateWorkStatus(WorkStatus.OUT_OFF_OFFICE);
                         commuteRepository.save(commute);
                     }
@@ -216,6 +221,7 @@ public class CommuteService {
             log.info("오늘은 근무일이 아니어서 결근 처리를 중단합니다.");
             return;
         }
+        log.info("회사 ID {}에 대한 결근자를 기록합니다.", companyId);
         LocalDate today = timeService.nowDate();
         userRepository.findByCompanyId(companyId).stream()
                 .map(user -> commuteRepository.findByUserAndDate(user, today))
@@ -232,6 +238,7 @@ public class CommuteService {
      * @param commute 출퇴근 엔티티
      */
     private void markAbsent(Commute commute) {
+        log.info("출퇴근 기록을 결근으로 업데이트합니다. Commute ID: {}", commute.getId());
         commute.updateAttendanceStatus(AttendanceStatus.ABSENT);
         commuteRepository.save(commute);
     }
