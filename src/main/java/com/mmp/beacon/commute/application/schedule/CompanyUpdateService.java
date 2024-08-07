@@ -19,6 +19,6 @@ public class CompanyUpdateService {
     @Transactional
     public void updateCompany(Company company) {
         companyRepository.save(company);
-        companyScheduleService.rescheduleCompanyTasks(company);
+        companyScheduleService.scheduleCompanyTasks(company);
     }
 }

@@ -13,11 +13,4 @@ public interface ScheduleService {
      * @param company 회사 엔티티
      */
     void scheduleCompanyTasks(Company company);
-
-    /**
-     * 회사별 스케줄 작업을 재등록합니다.
-     *
-     * @param company 회사 엔티티
-     */
-    void rescheduleCompanyTasks(Company company);
 }
