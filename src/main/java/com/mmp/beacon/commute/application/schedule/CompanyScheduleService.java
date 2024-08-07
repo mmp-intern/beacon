@@ -15,9 +15,13 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * 회사별 스케줄 작업을 관리하는 서비스 클래스입니다.
+ * 각 회사의 출근 및 퇴근 시간에 맞춰 스케줄 작업을 등록하고 관리합니다.
  */
 @Slf4j
 @Service
@@ -29,8 +33,12 @@ public class CompanyScheduleService implements ScheduleService {
     private final TimeService timeService;
     private final CompanyRepository companyRepository;
 
+    private final Map<Long, ScheduledFuture<?>> startTaskMap = new ConcurrentHashMap<>();
+    private final Map<Long, ScheduledFuture<?>> endTaskMap = new ConcurrentHashMap<>();
+
     /**
      * 서버 시작 시 스케줄 작업을 등록합니다.
+     * 모든 회사의 출근 및 퇴근 시간에 맞춘 작업을 등록합니다.
      */
     @PostConstruct
     public void init() {
@@ -39,7 +47,7 @@ public class CompanyScheduleService implements ScheduleService {
     }
 
     /**
-     * 매일 모든 회사의 출근 및 퇴근 시간을 기반으로 스케줄 작업을 등록합니다.
+     * 매일 자정에 모든 회사의 출근 및 퇴근 시간을 기반으로 스케줄 작업을 등록합니다.
      */
     @Scheduled(cron = "0 0 0 * * *")
     public void scheduleDailyCompanyTasks() {
@@ -56,32 +64,25 @@ public class CompanyScheduleService implements ScheduleService {
     @Override
     public void scheduleCompanyTasks(Company company) {
         log.info("회사({})의 스케줄 작업을 등록 시작", company.getId());
-        scheduleTask(company.getStartTime(), () -> commuteService.markLateArrivals(company.getId()));
-        scheduleTask(company.getEndTime(), () -> commuteService.markAbsentees(company.getId()));
+        scheduleTask(company.getId(), company.getStartTime(), () -> commuteService.markLateArrivals(company.getId()), startTaskMap);
+        scheduleTask(company.getId(), company.getEndTime(), () -> commuteService.markAbsentees(company.getId()), endTaskMap);
         log.info("회사({})의 스케줄 작업을 등록 완료", company.getId());
     }
 
     /**
-     * 기존 스케줄 작업을 취소하고 새로운 스케줄 작업을 등록합니다.
-     *
-     * @param company 회사 엔티티
-     */
-    @Override
-    public void rescheduleCompanyTasks(Company company) {
-        log.info("회사({})의 스케줄 작업을 재등록 시작", company.getId());
-        scheduleCompanyTasks(company);
-        log.info("회사({})의 스케줄 작업 재등록 완료", company.getId());
-    }
-
-    /**
      * 주어진 시간에 스케줄 작업을 등록합니다.
+     * 기존에 등록된 작업이 있다면 취소한 후 새로운 작업을 등록합니다.
      *
+     * @param companyId 회사 ID
      * @param time 작업 실행 시간
      * @param task 실행할 작업
+     * @param taskMap 작업을 저장할 맵
      */
-    private void scheduleTask(LocalTime time, Runnable task) {
+    private void scheduleTask(Long companyId, LocalTime time, Runnable task, Map<Long, ScheduledFuture<?>> taskMap) {
+        cancelScheduledTask(taskMap, companyId);
         Trigger trigger = createTrigger(timeService.nowDateTime().with(time));
-        taskScheduler.schedule(task, trigger);
+        ScheduledFuture<?> scheduledTask = taskScheduler.schedule(task, trigger);
+        taskMap.put(companyId, scheduledTask);
     }
 
     /**
@@ -92,5 +93,20 @@ public class CompanyScheduleService implements ScheduleService {
      */
     private Trigger createTrigger(LocalDateTime time) {
         return triggerContext -> time.atZone(ZoneId.systemDefault()).toInstant();
+    }
+
+    /**
+     * 기존 스케줄 작업을 취소합니다.
+     *
+     * @param taskMap 스케줄 작업 맵
+     * @param companyId 회사 ID
+     */
+    private void cancelScheduledTask(Map<Long, ScheduledFuture<?>> taskMap, Long companyId) {
+        ScheduledFuture<?> scheduledTask = taskMap.get(companyId);
+        if (scheduledTask != null && !scheduledTask.isCancelled()) {
+            log.info("회사({})의 기존 스케줄 작업을 취소합니다.", companyId);
+            scheduledTask.cancel(false);
+            taskMap.remove(companyId);
+        }
     }
 }
