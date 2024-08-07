@@ -31,7 +31,4 @@ public class CreateUserRequest {
 
     @NotBlank(message = "회사를 입력해 주세요.")
     private String company;
-
-    @NotBlank(message = "사용자 역할을 입력해 주세요.")
-    private String role;
 }

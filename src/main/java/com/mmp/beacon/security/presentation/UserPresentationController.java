@@ -1,7 +1,5 @@
 package com.mmp.beacon.security.presentation;
 
-import com.mmp.beacon.company.domain.Company;
-import com.mmp.beacon.company.domain.repository.CompanyRepository;
 import com.mmp.beacon.security.application.CustomUserDetails;
 import com.mmp.beacon.security.application.UserApplicationService;
 import com.mmp.beacon.security.presentation.request.AdminCreateRequest;
@@ -24,7 +22,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -34,7 +31,6 @@ import java.util.Optional;
 public class UserPresentationController {
 
     private final UserApplicationService userApplicationService;
-    private final CompanyRepository companyRepository;
 
     @PostMapping("/users")
     public ResponseEntity<String> createUser(@Valid @RequestBody CreateUserRequest userDto) {
@@ -50,10 +46,6 @@ public class UserPresentationController {
         }
 
         try {
-            Optional<Company> companyOptional = companyRepository.findByName(userDto.getCompany());
-            if (companyOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("유효하지 않은 회사 이름입니다.");
-            }
             userApplicationService.register(userDto);
             return ResponseEntity.ok("사용자 등록 성공");
         } catch (DataIntegrityViolationException e) {

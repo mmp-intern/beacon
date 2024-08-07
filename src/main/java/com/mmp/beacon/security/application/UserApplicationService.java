@@ -12,6 +12,7 @@ import com.mmp.beacon.user.domain.Admin;
 import com.mmp.beacon.user.domain.User;
 import com.mmp.beacon.user.domain.UserRole;
 import com.mmp.beacon.user.domain.repository.AbstractUserRepository;
+import com.mmp.beacon.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -32,6 +33,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserApplicationService {
 
+    private final UserRepository userRepository;
     private final AbstractUserRepository abstractUserRepository; // 사용자 저장소에 접근하기 위한 객체
     private final BCryptPasswordEncoder bCryptPasswordEncoder; // 비밀번호 암호화를 위한 객체
     private final JwtTokenProvider jwtTokenProvider; // JWT 토큰 생성을 위한 객체
@@ -53,34 +55,20 @@ public class UserApplicationService {
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(String userId) {
         AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
-        AbstractUser user = abstractUserRepository.findByUserId(userId)
+        User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("ID가 " + userId + "인 사용자를 찾을 수 없습니다.")); // 사용자 ID로 사용자 정보를 조회
 
-        // 슈퍼 어드민일 경우에도 USER 역할의 사용자만 조회할 수 있음
+        // 슈퍼 어드민일 회사 제약 없이 사용자 조회 가능
         if (currentUser.getRole() == UserRole.SUPER_ADMIN) {
-            if (user.getRole() != UserRole.USER) {
-                throw new IllegalArgumentException("사용자만 조회할 수 있습니다.");
-            }
             return createUserProfileResponse(user);
         }
 
-        // 권한 체크
-        if (user.getUserId().equals(currentUser.getUserId()) &&
-                (user.getRole() == UserRole.SUPER_ADMIN || user.getRole() == UserRole.ADMIN)) {
-            throw new IllegalArgumentException("[권한 부족] 조회할 수 없습니다.");
-        }
-
-        // 같은 회사인지 체크
+        // 관리자 또는 사용자인 경우 같은 회사인지 체크
         Company currentUserCompany = getUserCompany(currentUser);
         Company userCompany = getUserCompany(user);
 
         if (currentUserCompany == null || userCompany == null || !currentUserCompany.equals(userCompany)) {
             throw new IllegalArgumentException("같은 회사의 사용자만 조회할 수 있습니다.");
-        }
-
-        // 역할 체크
-        if (user.getRole() != UserRole.USER) {
-            throw new IllegalArgumentException("USER 프로필만 조회할 수 있습니다.");
         }
 
         return createUserProfileResponse(user); // 사용자 프로필 응답 생성
@@ -130,11 +118,10 @@ public class UserApplicationService {
             if (role != UserRole.USER && role != UserRole.ADMIN) {
                 throw new IllegalArgumentException("권한이 부족합니다.");
             }
-            if (userDto.getCompany() == null || userDto.getCompany().isEmpty()) {
-                throw new IllegalArgumentException("회사 이름을 비워둘 수 없습니다.");
-            }
             company = companyRepository.findByName(userDto.getCompany())
                     .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
+
+
         } else if (currentUser.getRole() == UserRole.ADMIN) {
             if (role != UserRole.USER) {
                 throw new IllegalArgumentException("권한이 부족합니다.");
@@ -152,7 +139,7 @@ public class UserApplicationService {
     // 새로운 관리자를 등록하는 메서드
     @Transactional
     public void registerAdmin(AdminCreateRequest adminDto) {
-        try {
+
             String encPassword = bCryptPasswordEncoder.encode(adminDto.getPassword()); // 비밀번호 암호화
             UserRole role = UserRole.ADMIN; // 역할을 항상 ADMIN으로 지정
 
@@ -168,21 +155,7 @@ public class UserApplicationService {
 
             abstractUserRepository.save(user); // 관리자 저장
             log.info("관리자 등록 성공: {}", adminDto.getUserId());
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().equals("회사를 찾을 수 없습니다.")) {
-                log.error("회사가 존재하지 않습니다: {}", adminDto.getCompany(), e);
-                throw new IllegalArgumentException("회사가 존재하지 않습니다: " + adminDto.getCompany());
-            } else {
-                log.error("유효하지 않은 권한 또는 권한 부족: {}", adminDto.getRole(), e);
-                throw new IllegalArgumentException("유효하지 않은 권한 또는 권한 부족: " + adminDto.getRole());
-            }
-        } catch (DataIntegrityViolationException e) {
-            log.error("중복된 항목 오류: ", e);
-            throw new DataIntegrityViolationException("중복된 항목 오류: " + adminDto.getUserId());
-        } catch (Exception e) {
-            log.error("등록 실패: ", e);
-            throw new RuntimeException("등록 실패: " + e.getMessage(), e);
-        }
+
     }
 
     // 사용자를 인증하는 메서드
@@ -269,11 +242,13 @@ public class UserApplicationService {
         if (user instanceof User) {
             User specificUser = (User) user;
             return new UserProfileResponse(
+                    user.getId(),
                     user.getUserId(),
                     specificUser.getEmail(),
                     specificUser.getPosition(),
                     specificUser.getName(),
                     specificUser.getPhone(),
+                    specificUser.getCompany().getId(),
                     specificUser.getCompany().getName(),
                     user.getRole().name()
             );
