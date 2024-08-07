@@ -16,7 +16,7 @@ public class User extends AbstractUser {
     @JoinColumn(name = "company_no", nullable = false)
     private Company company;
 
-    @Column(name = "user_name", nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
     @Column(name = "email", nullable = false)
@@ -27,4 +27,16 @@ public class User extends AbstractUser {
 
     @Column(name = "position")
     private String position;
+
+
+
+
+    public User(String userId, String password, UserRole role, Company company, String name, String email, String phone, String position) {
+        super(userId, password, role);
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.position = position;
+        this.company = company;
+    }
 }

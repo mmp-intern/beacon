@@ -1,10 +1,16 @@
 package com.mmp.beacon.user.domain;
 
+import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.global.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.Collections;
+import java.util.List;
 
 @Getter
 @Entity
@@ -28,4 +34,16 @@ public abstract class AbstractUser extends BaseEntity {
     @Column(name = "role", nullable = false)
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
+
+    public List<GrantedAuthority> getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority(this.getRole().name()));
+    }
+
+    public AbstractUser(String userId, String password, UserRole role) {
+        this.userId = userId;
+        this.password = password;
+        this.role = role;
+    }
 }
+

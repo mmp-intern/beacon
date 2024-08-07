@@ -11,4 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @DiscriminatorValue("SUPER_ADMIN")
 public class SuperAdmin extends AbstractUser {
+
+
+
+    public SuperAdmin(String userId, String password, UserRole role) {
+        super(userId, password, role);
+    }
 }
