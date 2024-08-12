@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@DiscriminatorValue("USER")
+@Table(name = "employee")
 public class User extends AbstractUser {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -27,9 +27,6 @@ public class User extends AbstractUser {
 
     @Column(name = "position")
     private String position;
-
-
-
 
     public User(String userId, String password, UserRole role, Company company, String name, String email, String phone, String position) {
         super(userId, password, role);

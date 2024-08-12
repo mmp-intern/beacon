@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class JwtToken {
 
-	private String accessToken;
+    private String accessToken;
 
-	@Builder
+    @Builder
     private JwtToken(String accessToken) {
         this.accessToken = accessToken;
     }

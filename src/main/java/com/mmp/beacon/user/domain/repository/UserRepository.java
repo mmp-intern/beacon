@@ -25,12 +25,10 @@ public interface UserRepository extends JpaRepository<User, Long>, CustomUserRep
      * 주어진 회사 ID를 사용하여 해당 회사에 소속된 모든 사용자를 페이지네이션하여 조회합니다.
      *
      * @param companyId 조회할 회사의 ID
-     * @param pageable 페이지 정보
+     * @param pageable  페이지 정보
      * @return 페이징된 사용자 목록
      */
     Page<User> findByCompanyId(Long companyId, Pageable pageable);
-
-
 
 
     Optional<User> findByUserId(String userId);

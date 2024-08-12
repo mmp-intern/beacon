@@ -1,6 +1,5 @@
 package com.mmp.beacon.user.domain;
 
-import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.global.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -16,8 +15,7 @@ import java.util.List;
 @Entity
 @Table(name = "users")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "user_type")
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class AbstractUser extends BaseEntity {
 
     @Id
@@ -34,7 +32,6 @@ public abstract class AbstractUser extends BaseEntity {
     @Column(name = "role", nullable = false)
     @Enumerated(EnumType.STRING)
     private UserRole role;
-
 
     public List<GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority(this.getRole().name()));

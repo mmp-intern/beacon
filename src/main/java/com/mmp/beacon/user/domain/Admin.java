@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@DiscriminatorValue("ADMIN")
+@Table(name = "admin")
 public class Admin extends AbstractUser {
 
     @ManyToOne(fetch = FetchType.LAZY)
