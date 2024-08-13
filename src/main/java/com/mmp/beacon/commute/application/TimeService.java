@@ -2,6 +2,7 @@ package com.mmp.beacon.commute.application;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**
  * 현재 시간을 제공하는 서비스 인터페이스입니다.
@@ -9,7 +10,7 @@ import java.time.LocalDateTime;
 public interface TimeService {
 
     /**
-     * 현재 시간을 반환합니다.
+     * 현재 날짜 및 시간을 반환합니다.
      *
      * @return 현재 LocalDateTime 객체
      */
@@ -21,4 +22,11 @@ public interface TimeService {
      * @return 현재 LocalDate 객체
      */
     LocalDate nowDate();
+
+    /**
+     * 현재 시간을 반환합니다.
+     *
+     * @return 현재 LocalTime 객체
+     */
+    LocalTime nowTime();
 }

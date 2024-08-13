@@ -64,7 +64,15 @@ public class CompanyScheduleService implements ScheduleService {
     @Override
     public void scheduleCompanyTasks(Company company) {
         log.info("회사({})의 스케줄 작업을 등록 시작", company.getId());
-        scheduleTask(company.getId(), company.getStartTime(), () -> commuteService.markLateArrivals(company.getId()), startTaskMap);
+
+        LocalTime now = timeService.nowTime();
+        if (now.isAfter(company.getStartTime())) {
+            log.info("현재 시간이 회사({})의 출근 시간({})을 초과했으므로 지각 처리 스케줄을 바로 실행합니다.", company.getId(), company.getStartTime());
+            commuteService.markLateArrivals(company.getId());
+        } else {
+            scheduleTask(company.getId(), company.getStartTime(), () -> commuteService.markLateArrivals(company.getId()), startTaskMap);
+        }
+
         scheduleTask(company.getId(), company.getEndTime(), () -> commuteService.markAbsentees(company.getId()), endTaskMap);
         log.info("회사({})의 스케줄 작업을 등록 완료", company.getId());
     }
@@ -74,15 +82,21 @@ public class CompanyScheduleService implements ScheduleService {
      * 기존에 등록된 작업이 있다면 취소한 후 새로운 작업을 등록합니다.
      *
      * @param companyId 회사 ID
-     * @param time      작업 실행 시간
-     * @param task      실행할 작업
-     * @param taskMap   작업을 저장할 맵
+     * @param time 작업 실행 시간
+     * @param task 실행할 작업
+     * @param taskMap 작업을 저장할 맵
      */
     private void scheduleTask(Long companyId, LocalTime time, Runnable task, Map<Long, ScheduledFuture<?>> taskMap) {
         cancelScheduledTask(taskMap, companyId);
-        Trigger trigger = createTrigger(timeService.nowDateTime().with(time));
-        ScheduledFuture<?> scheduledTask = taskScheduler.schedule(task, trigger);
-        taskMap.put(companyId, scheduledTask);
+
+        LocalTime now = timeService.nowTime();
+        if (now.isBefore(time)) {
+            Trigger trigger = createTrigger(timeService.nowDateTime().with(time));
+            ScheduledFuture<?> scheduledTask = taskScheduler.schedule(task, trigger);
+            taskMap.put(companyId, scheduledTask);
+        } else {
+            log.info("현재 시간이 회사({})의 출근 시간({})을 초과했으므로 스케줄을 등록하지 않습니다.", companyId, time);
+        }
     }
 
     /**
@@ -98,7 +112,7 @@ public class CompanyScheduleService implements ScheduleService {
     /**
      * 기존 스케줄 작업을 취소합니다.
      *
-     * @param taskMap   스케줄 작업 맵
+     * @param taskMap 스케줄 작업 맵
      * @param companyId 회사 ID
      */
     private void cancelScheduledTask(Map<Long, ScheduledFuture<?>> taskMap, Long companyId) {
