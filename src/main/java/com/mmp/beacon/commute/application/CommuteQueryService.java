@@ -115,8 +115,8 @@ public class CommuteQueryService {
         CommuteRecordResponse.CommuteInfo commuteInfo = (info.getCommuteId() != null) ? new CommuteRecordResponse.CommuteInfo(
                 info.getCommuteId(),
                 info.getDate(),
-                info.getStartTime(),
-                info.getEndTime(),
+                info.getStartedAt(),
+                info.getEndedAt(),
                 info.getAttendanceStatus(),
                 info.getWorkStatus()
         ) : null;

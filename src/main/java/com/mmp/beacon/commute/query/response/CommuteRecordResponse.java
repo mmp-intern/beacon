@@ -20,8 +20,8 @@ public record CommuteRecordResponse(
     public record CommuteInfo(
             Long id,
             LocalDate date,
-            LocalTime startTime,
-            LocalTime endTime,
+            LocalTime startedAt,
+            LocalTime endedAt,
             AttendanceStatus attendanceStatus,
             WorkStatus workStatus
     ) {

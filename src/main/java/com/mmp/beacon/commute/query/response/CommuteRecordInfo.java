@@ -16,8 +16,8 @@ public class CommuteRecordInfo {
     private final String userName;
     private final Long commuteId;
     private final LocalDate date;
-    private final LocalTime startTime;
-    private final LocalTime endTime;
+    private final LocalTime startedAt;
+    private final LocalTime endedAt;
     private final AttendanceStatus attendanceStatus;
     private final WorkStatus workStatus;
 
@@ -28,8 +28,8 @@ public class CommuteRecordInfo {
             String userName,
             Long commuteId,
             LocalDate date,
-            LocalTime startTime,
-            LocalTime endTime,
+            LocalTime startedAt,
+            LocalTime endedAt,
             AttendanceStatus attendanceStatus,
             WorkStatus workStatus
     ) {
@@ -38,8 +38,8 @@ public class CommuteRecordInfo {
         this.userName = userName;
         this.commuteId = commuteId;
         this.date = date;
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.startedAt = startedAt;
+        this.endedAt = endedAt;
         this.attendanceStatus = attendanceStatus;
         this.workStatus = workStatus;
     }
