@@ -211,13 +211,7 @@ public class CustomCommuteRepositoryImpl implements CustomCommuteRepository {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        // Ensure count query includes necessary joins
-        long total = Optional.ofNullable(queryFactory.select(user.count())
-                        .from(user)
-                        .leftJoin(commute).on(commute.user.id.eq(user.id).and(datePredicate))
-                        .where(companyPredicate.and(searchPredicate))
-                        .fetchOne())
-                .orElse(0L);
+        long total = results.size();
 
         List<CommuteStatisticsResponse> responses = results.stream()
                 .map(info -> new CommuteStatisticsResponse(
