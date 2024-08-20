@@ -38,20 +38,6 @@ public class CommuteQueryController {
         return ResponseEntity.ok(commutes);
     }
 
-    @GetMapping("/records")
-    public ResponseEntity<Page<CommuteRecordResponse>> listCommuteRecords(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String searchTerm,
-            @RequestParam(required = false, defaultValue = "id") String searchBy,
-            Pageable pageable
-    ) {
-        Long userId = UserUtil.getCurrentUserId();
-        CommutePeriodCommand command = new CommutePeriodCommand(userId, startDate, endDate, searchTerm, searchBy, pageable);
-        Page<CommuteRecordResponse> commutes = commuteQueryService.findCommuteRecords(command);
-        return ResponseEntity.ok(commutes);
-    }
-
     @GetMapping("/statistics")
     public ResponseEntity<Page<CommuteStatisticsResponse>> listCommuteStatistics(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -65,6 +51,21 @@ public class CommuteQueryController {
         Page<CommuteStatisticsResponse> statistics = commuteQueryService.findCommuteStatistics(command);
         return ResponseEntity.ok(statistics);
     }
+
+    /*    @GetMapping("/records")
+    public ResponseEntity<Page<CommuteRecordResponse>> listCommuteRecords(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false, defaultValue = "id") String searchBy,
+            Pageable pageable
+    ) {
+        Long userId = UserUtil.getCurrentUserId();
+        CommutePeriodCommand command = new CommutePeriodCommand(userId, startDate, endDate, searchTerm, searchBy, pageable);
+        Page<CommuteRecordResponse> commutes = commuteQueryService.findCommuteRecords(command);
+        return ResponseEntity.ok(commutes);
+    }*/
+
 
     /*    @GetMapping("/today")
     public ResponseEntity<Page<CommuteRecordResponse>> listTodayCommuteRecords(Pageable pageable) {

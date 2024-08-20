@@ -2,19 +2,17 @@ package com.mmp.beacon.commute.application;
 
 import com.mmp.beacon.commute.application.command.CommuteDailyCommand;
 import com.mmp.beacon.commute.application.command.CommutePeriodCommand;
-import com.mmp.beacon.commute.domain.AttendanceStatus;
-import com.mmp.beacon.commute.domain.Commute;
 import com.mmp.beacon.commute.domain.repository.CommuteRepository;
 import com.mmp.beacon.commute.query.response.CommuteRecordInfo;
 import com.mmp.beacon.commute.query.response.CommuteRecordResponse;
 import com.mmp.beacon.commute.query.response.CommuteStatisticsResponse;
 import com.mmp.beacon.company.domain.Company;
+import com.mmp.beacon.company.domain.repository.CompanyRepository;
+import com.mmp.beacon.company.exception.CompanyNotFoundException;
 import com.mmp.beacon.user.domain.AbstractUser;
 import com.mmp.beacon.user.domain.Admin;
 import com.mmp.beacon.user.domain.User;
 import com.mmp.beacon.user.domain.repository.AbstractUserRepository;
-import com.mmp.beacon.user.domain.repository.UserRepository;
-import com.mmp.beacon.user.exception.SuperAdminAccessException;
 import com.mmp.beacon.user.exception.UserNotFoundException;
 import com.mmp.beacon.user.exception.UserWithoutCompanyException;
 import lombok.RequiredArgsConstructor;
@@ -30,22 +28,11 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CommuteQueryService {
 
+    private static final Long FIXED_COMPANY_ID = 1L;
     private final CommuteRepository commuteRepository;
+    private final CompanyRepository companyRepository;
     private final AbstractUserRepository abstractUserRepository;
-    private final UserRepository userRepository;
     private final TimeService timeService;
-
-/*    @Transactional(readOnly = true)
-    public Page<CommuteRecordResponse> findTodayCommuteRecords(Long userId, Pageable pageable) {
-        LocalDate today = timeService.nowDate();
-        AbstractUser user = abstractUserRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        Long companyId = getCompanyId(user);
-
-        return userRepository.findByCompanyId(companyId, pageable).map(userPage -> {
-            Optional<Commute> commute = commuteRepository.findByUserAndDate(userPage, today);
-            return mapToCommuteRecordResponse(userPage, commute.orElse(null));
-        });
-    }*/
 
     @Transactional(readOnly = true)
     public Page<CommuteRecordResponse> findCommuteRecordsByDate(CommuteDailyCommand command) {
@@ -59,22 +46,6 @@ public class CommuteQueryService {
         );
 
         return commuteInfos.map(this::mapToCommuteRecordResponse);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<CommuteRecordResponse> findCommuteRecords(CommutePeriodCommand command) {
-        AbstractUser user = abstractUserRepository.findById(command.userId())
-                .orElseThrow(UserNotFoundException::new);
-        Long companyId = getCompanyId(user);
-
-        LocalDate currentDate = timeService.nowDate();
-        LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(currentDate.withDayOfMonth(1));
-        LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(YearMonth.from(currentDate).atEndOfMonth());
-
-        Page<Commute> commutes = commuteRepository.findByCompanyIdAndPeriodAndSearchTerm(
-                companyId, startDate, endDate, command.searchTerm(), command.searchBy(), command.pageable());
-
-        return commutes.map(commute -> mapToCommuteRecordResponse(commute.getUser(), commute));
     }
 
     @Transactional(readOnly = true)
@@ -101,7 +72,9 @@ public class CommuteQueryService {
                     .map(Company::getId)
                     .orElseThrow(UserWithoutCompanyException::new);
         } else {
-            throw new SuperAdminAccessException("슈퍼 관리자는 별도의 API를 사용해야 합니다.");
+            return companyRepository.findById(FIXED_COMPANY_ID)
+                    .map(Company::getId)
+                    .orElseThrow(CompanyNotFoundException::new);
         }
     }
 
@@ -124,7 +97,46 @@ public class CommuteQueryService {
         return new CommuteRecordResponse(userInfo, commuteInfo);
     }
 
-    private CommuteRecordResponse mapToCommuteRecordResponse(User user, Commute commute) {
+    /*    @Transactional(readOnly = true)
+    public Page<CommuteRecordResponse> findCommuteRecords(CommutePeriodCommand command) {
+        AbstractUser user = abstractUserRepository.findById(command.userId())
+                .orElseThrow(UserNotFoundException::new);
+        Long companyId = getCompanyId(user);
+
+        LocalDate currentDate = timeService.nowDate();
+        LocalDate startDate = Optional.ofNullable(command.startDate()).orElse(currentDate.withDayOfMonth(1));
+        LocalDate endDate = Optional.ofNullable(command.endDate()).orElse(YearMonth.from(currentDate).atEndOfMonth());
+
+        Page<Commute> commutes = commuteRepository.findByCompanyIdAndPeriodAndSearchTerm(
+                companyId, startDate, endDate, command.searchTerm(), command.searchBy(), command.pageable());
+
+        return commutes.map(commute -> mapToCommuteRecordResponse(commute.getUser(), commute));
+    }*/
+
+    /*    @Transactional(readOnly = true)
+    public Page<CommuteRecordResponse> findTodayCommuteRecords(Long userId, Pageable pageable) {
+        LocalDate today = timeService.nowDate();
+        AbstractUser user = abstractUserRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        Long companyId = getCompanyId(user);
+
+        return userRepository.findByCompanyId(companyId, pageable).map(userPage -> {
+            Optional<Commute> commute = commuteRepository.findByUserAndDate(userPage, today);
+            return mapToCommuteRecordResponse(userPage, commute.orElse(null));
+        });
+    }*/
+
+    /*private CommuteStatisticsResponse.CommuteStatistics calculateStatistics(User user, LocalDate startDate, LocalDate endDate) {
+        int presentDays = (int) commuteRepository.countByUserAndDateBetweenAndAttendanceStatus(
+                user, startDate, endDate, AttendanceStatus.PRESENT);
+        int lateDays = (int) commuteRepository.countByUserAndDateBetweenAndAttendanceStatus(
+                user, startDate, endDate, AttendanceStatus.LATE);
+        int absentDays = (int) commuteRepository.countByUserAndDateBetweenAndAttendanceStatus(
+                user, startDate, endDate, AttendanceStatus.ABSENT);
+        int totalDays = presentDays + lateDays + absentDays;
+        return new CommuteStatisticsResponse.CommuteStatistics(presentDays, lateDays, absentDays, totalDays);
+    }*/
+
+    /*private CommuteRecordResponse mapToCommuteRecordResponse(User user, Commute commute) {
         CommuteRecordResponse.UserInfo userInfo = new CommuteRecordResponse.UserInfo(
                 user.getId(),
                 user.getUserId(),
@@ -141,16 +153,5 @@ public class CommuteQueryService {
         ) : null;
 
         return new CommuteRecordResponse(userInfo, commuteInfo);
-    }
-
-    private CommuteStatisticsResponse.CommuteStatistics calculateStatistics(User user, LocalDate startDate, LocalDate endDate) {
-        int presentDays = (int) commuteRepository.countByUserAndDateBetweenAndAttendanceStatus(
-                user, startDate, endDate, AttendanceStatus.PRESENT);
-        int lateDays = (int) commuteRepository.countByUserAndDateBetweenAndAttendanceStatus(
-                user, startDate, endDate, AttendanceStatus.LATE);
-        int absentDays = (int) commuteRepository.countByUserAndDateBetweenAndAttendanceStatus(
-                user, startDate, endDate, AttendanceStatus.ABSENT);
-        int totalDays = presentDays + lateDays + absentDays;
-        return new CommuteStatisticsResponse.CommuteStatistics(presentDays, lateDays, absentDays, totalDays);
-    }
+    }*/
 }
