@@ -11,10 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
@@ -50,6 +47,15 @@ public class CommuteQueryController {
         CommutePeriodCommand command = new CommutePeriodCommand(userId, startDate, endDate, searchTerm, searchBy, pageable);
         Page<CommuteStatisticsResponse> statistics = commuteQueryService.findCommuteStatistics(command);
         return ResponseEntity.ok(statistics);
+    }
+
+    @GetMapping("/{commuteId}")
+    public ResponseEntity<CommuteRecordResponse> detailCommute(
+            @PathVariable Long commuteId
+    ) {
+        Long userId = UserUtil.getCurrentUserId();
+        CommuteRecordResponse commute = commuteQueryService.findCommuteRecord(userId, commuteId);
+        return ResponseEntity.ok(commute);
     }
 
     /*    @GetMapping("/records")
