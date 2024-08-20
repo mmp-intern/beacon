@@ -62,6 +62,17 @@ public class CommuteQueryService {
                 command.searchTerm(), command.searchBy(), command.pageable());
     }
 
+    @Transactional(readOnly = true)
+    public CommuteRecordResponse findCommuteRecord(Long userId, Long commuteId) {
+        AbstractUser user = abstractUserRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        Long companyId = getCompanyId(user);
+
+        return commuteRepository.findById(commuteId)
+                .map(this::mapToCommuteRecordResponse)
+                .orElseThrow(UserNotFoundException::new);
+    }
+
     private Long getCompanyId(AbstractUser abstractUser) {
         if (abstractUser instanceof Admin admin) {
             return Optional.ofNullable(admin.getCompany())
