@@ -84,4 +84,9 @@ public class Commute extends BaseEntity {
             this.endedAt = latestTimestamp;
         }
     }
+
+    public void updateTimestampByAdmin(LocalTime startedAt, LocalTime endedAt) {
+        this.startedAt = startedAt;
+        this.endedAt = endedAt;
+    }
 }

@@ -4,6 +4,7 @@ import com.mmp.beacon.commute.application.command.CommuteDailyCommand;
 import com.mmp.beacon.commute.application.command.CommutePeriodCommand;
 import com.mmp.beacon.commute.domain.Commute;
 import com.mmp.beacon.commute.domain.repository.CommuteRepository;
+import com.mmp.beacon.commute.exception.CommuteNotFoundException;
 import com.mmp.beacon.commute.query.response.CommuteRecordInfo;
 import com.mmp.beacon.commute.query.response.CommuteRecordResponse;
 import com.mmp.beacon.commute.query.response.CommuteStatisticsResponse;
@@ -72,7 +73,7 @@ public class CommuteQueryService {
 
         return commuteRepository.findById(commuteId)
                 .map(this::mapToCommuteRecordResponse)
-                .orElseThrow(UserNotFoundException::new);
+                .orElseThrow(CommuteNotFoundException::new);
     }
 
     private Long getCompanyId(AbstractUser abstractUser) {
