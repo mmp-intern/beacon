@@ -2,6 +2,7 @@ package com.mmp.beacon.commute.application;
 
 import com.mmp.beacon.commute.application.command.CommuteDailyCommand;
 import com.mmp.beacon.commute.application.command.CommutePeriodCommand;
+import com.mmp.beacon.commute.domain.Commute;
 import com.mmp.beacon.commute.domain.repository.CommuteRepository;
 import com.mmp.beacon.commute.query.response.CommuteRecordInfo;
 import com.mmp.beacon.commute.query.response.CommuteRecordResponse;
@@ -64,9 +65,10 @@ public class CommuteQueryService {
 
     @Transactional(readOnly = true)
     public CommuteRecordResponse findCommuteRecord(Long userId, Long commuteId) {
+        // TODO: 예외 처리
+
         AbstractUser user = abstractUserRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
-        Long companyId = getCompanyId(user);
 
         return commuteRepository.findById(commuteId)
                 .map(this::mapToCommuteRecordResponse)
@@ -104,6 +106,25 @@ public class CommuteQueryService {
                 info.getAttendanceStatus(),
                 info.getWorkStatus()
         ) : null;
+
+        return new CommuteRecordResponse(userInfo, commuteInfo);
+    }
+
+    private CommuteRecordResponse mapToCommuteRecordResponse(Commute commute) {
+        CommuteRecordResponse.UserInfo userInfo = new CommuteRecordResponse.UserInfo(
+                commute.getUser().getId(),
+                commute.getUser().getUserId(),
+                commute.getUser().getName()
+        );
+
+        CommuteRecordResponse.CommuteInfo commuteInfo = new CommuteRecordResponse.CommuteInfo(
+                commute.getId(),
+                commute.getDate(),
+                commute.getStartedAt(),
+                commute.getEndedAt(),
+                commute.getAttendanceStatus(),
+                commute.getWorkStatus()
+        );
 
         return new CommuteRecordResponse(userInfo, commuteInfo);
     }
