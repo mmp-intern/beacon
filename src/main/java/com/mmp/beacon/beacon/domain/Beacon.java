@@ -19,9 +19,22 @@ public class Beacon extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_no", nullable = false)
+    @JoinColumn(name = "user_no", nullable = true)
     private User user;
 
     @Column(name = "beacon_mac_addr", length = 50, unique = true, nullable = false)
     private String macAddr;
+
+    public Beacon(String macAddr) {
+        this.macAddr = macAddr;
+        this.user = null; // 초기 상태에서 사용자와 연결되지 않음
+    }
+
+    public void updateMacAddr(String macAddr) {
+        this.macAddr = macAddr;
+    }
+
+    public void markAsDeleted() {
+        this.delete();  // isDeleted 필드를 true로 설정
+    }
 }
