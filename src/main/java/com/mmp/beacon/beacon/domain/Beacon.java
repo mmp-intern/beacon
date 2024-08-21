@@ -27,7 +27,6 @@ public class Beacon extends BaseEntity {
 
     public Beacon(String macAddr) {
         this.macAddr = macAddr;
-        this.user = user;
     }
 
     public void updateMacAddr(String macAddr) {
