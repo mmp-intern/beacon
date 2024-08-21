@@ -52,7 +52,7 @@ public class UserApplicationService {
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(String userId) {
         AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
-        AbstractUser user = abstractUserRepository.findByUserId(userId)
+        AbstractUser user = abstractUserRepository.findByUserIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("ID가 " + userId + "인 사용자를 찾을 수 없습니다.")); // 사용자 ID로 사용자 정보를 조회
 
         // 조회하는 사람 A, 조회되는 사람 B
@@ -132,9 +132,15 @@ public class UserApplicationService {
             if (role != UserRole.USER) {
                 throw new IllegalArgumentException("권한이 부족합니다.");
             }
-            company = ((Admin) currentUser).getCompany();
-            if (!company.getName().equals(userDto.getCompany())) {
-                throw new IllegalArgumentException("같은 회사 사용자만 생성할 수 있습니다.");
+
+            // currentUser가 Admin 타입인지 확인
+            if (currentUser instanceof Admin) {
+                company = ((Admin) currentUser).getCompany();
+                if (company == null || !company.getName().equals(userDto.getCompany())) {
+                    throw new IllegalArgumentException("같은 회사 사용자만 생성할 수 있습니다.");
+                }
+            } else {
+                throw new IllegalArgumentException("권한 부족: Admin만 접근할 수 있습니다.");
             }
         } else {
             throw new IllegalArgumentException("권한 부족.");
@@ -165,9 +171,11 @@ public class UserApplicationService {
     }
 
     // 사용자를 인증하는 메서드
+    @Transactional
     public Map<String, String> authenticate(LoginRequest userDto) {
         log.info("사용자 인증 중: {}", userDto.getUserId());
-        Optional<AbstractUser> userOpt = abstractUserRepository.findByUserId(userDto.getUserId()); // 사용자 ID로 사용자 정보를 조회
+        // is_deleted가 false인 사용자만 조회
+        Optional<AbstractUser> userOpt = abstractUserRepository.findByUserIdAndIsDeletedFalse(userDto.getUserId());
 
         if (userOpt.isPresent() && bCryptPasswordEncoder.matches(userDto.getPassword(), userOpt.get().getPassword())) {
             AbstractUser user = userOpt.get();
@@ -210,6 +218,8 @@ public class UserApplicationService {
     @Transactional
     public void deleteUser(String userId) {
         AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
+        log.info("Current User: {}", currentUser.getUserId());
+        log.info("Deleting User with ID: {}", userId);  // 여기서 전달된 userId를 로그로 확인합니다.
         if (currentUser == null) {
             throw new IllegalArgumentException("인증이 필요합니다.");
         }
@@ -221,7 +231,7 @@ public class UserApplicationService {
 
         AbstractUser userToDelete = abstractUserRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다.")); // 사용자 ID로 삭제할 사용자 정보를 조회
-
+        log.info("삭제 요청된 사용자 ID: {}", userId);
         if (currentUserRole == UserRole.ADMIN) {
             if (userToDelete.getRole() != UserRole.USER) {
                 throw new IllegalArgumentException("권한이 부족합니다: 이 사용자를 삭제할 수 없습니다.");
@@ -232,7 +242,8 @@ public class UserApplicationService {
             }
         }
 
-        abstractUserRepository.delete(userToDelete); // 사용자 삭제
+        userToDelete.delete(); // 소프트 삭제
+        abstractUserRepository.save(userToDelete);
         log.info("사용자 삭제 성공: {}", userId);
     }
 
@@ -288,4 +299,3 @@ public class UserApplicationService {
         }
     }
 }
-

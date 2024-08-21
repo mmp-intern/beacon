@@ -3,6 +3,7 @@ package com.mmp.beacon.user.domain;
 import com.mmp.beacon.global.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,9 +15,10 @@ import java.util.List;
 @Getter
 @Entity
 @Table(name = "users")
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class AbstractUser extends BaseEntity {
+public class AbstractUser extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,5 +44,6 @@ public abstract class AbstractUser extends BaseEntity {
         this.password = password;
         this.role = role;
     }
+
 }
 

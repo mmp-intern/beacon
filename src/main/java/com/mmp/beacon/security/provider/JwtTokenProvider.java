@@ -27,8 +27,8 @@ public class JwtTokenProvider {
 
     private static final String TOKEN_HEADER_PREFIX = "Bearer ";
     private static final String ISSUER = "http://localhost";
-    private static final int ACCESS_VALID_HOUR = 1;  // Access Token validity period
-    private static final int REFRESH_VALID_DAYS = 7; // Refresh Token validity period
+    private static final int ACCESS_VALID_HOUR = 96;  // access토큰 만료시간 4일
+    private static final int REFRESH_VALID_DAYS = 4; // 리프레시토큰 만료시간 4일
 
     @Value("${jwt.secret}")
     private String secretKey;

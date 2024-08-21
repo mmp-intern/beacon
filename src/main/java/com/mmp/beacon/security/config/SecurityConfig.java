@@ -51,11 +51,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/login").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAnyAuthority("SUPER_ADMIN")
                         .requestMatchers("/api/v1/superadmin/**").hasAuthority("SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users/profile").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers("/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers("/api/v1/beacons/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/v1/commutes/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN", "USER")
                         .requestMatchers("/ws/beacon/**").permitAll()
                         .anyRequest().authenticated());
