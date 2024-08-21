@@ -7,6 +7,8 @@ public class BeaconResponse {
 
     private Long id;
     private String macAddr;
-    private Long userId;
+    private Long user_Id; //user의 고유 pk
+    private String userId;
+    private String userName;
 
 }

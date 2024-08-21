@@ -64,9 +64,12 @@ public class BeaconService {
         BeaconResponse dto = new BeaconResponse();
         dto.setId(beacon.getId());
         dto.setMacAddr(beacon.getMacAddr());
+
         // User가 null일 경우 처리
         if (beacon.getUser() != null) {
-            dto.setUserId(beacon.getUser().getId());
+            dto.setUser_Id(beacon.getUser().getId());         // User의 고유 PK (id)
+            dto.setUserId(beacon.getUser().getUserId());    // User의 userId 필드
+            dto.setUserName(beacon.getUser().getName());     // User의 이름
         }
         return dto;
     }
