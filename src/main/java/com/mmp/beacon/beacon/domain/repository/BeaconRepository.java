@@ -3,6 +3,8 @@ package com.mmp.beacon.beacon.domain.repository;
 import com.mmp.beacon.beacon.domain.Beacon;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
 import java.util.List;
@@ -26,18 +28,5 @@ public interface BeaconRepository extends JpaRepository<Beacon, Long> {
      */
     Optional<Beacon> findByIdAndIsDeletedFalse(Long id);
 
-    /**
-     * 소프트 삭제되지 않은 모든 비콘을 반환합니다.
-     *
-     * @return 소프트 삭제되지 않은 모든 비콘
-     */
-    List<Beacon> findAllByIsDeletedFalse();
-
-    /**
-     * 소프트 삭제되지 않은 비콘을 MAC 주소로 찾습니다.
-     *
-     * @param macAddr 비콘 MAC 주소
-     * @return 소프트 삭제되지 않은 비콘
-     */
-    Optional<Beacon> findByMacAddrAndIsDeletedFalse(String macAddr);
+    Page<Beacon> findAllByIsDeletedFalse(Pageable pageable);
 }

@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface AbstractUserRepository extends JpaRepository<AbstractUser, Long> {
     Optional<AbstractUser> findByUserId(String userId);
+
+    Optional<AbstractUser> findByUserIdAndIsDeletedFalse(String userId);
 }

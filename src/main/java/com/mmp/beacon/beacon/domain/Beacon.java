@@ -27,14 +27,11 @@ public class Beacon extends BaseEntity {
 
     public Beacon(String macAddr) {
         this.macAddr = macAddr;
-        this.user = null; // 초기 상태에서 사용자와 연결되지 않음
+        this.user = user;
     }
 
     public void updateMacAddr(String macAddr) {
         this.macAddr = macAddr;
     }
 
-    public void markAsDeleted() {
-        this.delete();  // isDeleted 필드를 true로 설정
-    }
 }

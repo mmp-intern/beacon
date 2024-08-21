@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 
@@ -19,8 +21,10 @@ public class BeaconController {
     private final BeaconService beaconService;
 
     @GetMapping
-    public ResponseEntity<List<BeaconResponse>> getAllBeacons() {
-        return ResponseEntity.ok(beaconService.getAllBeacons());
+    public ResponseEntity<Page<BeaconResponse>> getAllBeacons(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(beaconService.getAllBeacons(page, size));
     }
 
     @GetMapping("/{id}")
