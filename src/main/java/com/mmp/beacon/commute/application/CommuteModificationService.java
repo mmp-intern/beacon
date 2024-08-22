@@ -29,7 +29,7 @@ public class CommuteModificationService {
      */
     @Transactional
     public void modifyCommute(Long userId, Long commuteId, CommuteModificationRequest request) {
-        AbstractUser user = abstractUserRepository.findById(userId)
+        AbstractUser user = abstractUserRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(UserNotFoundException::new);
 
         if (!isAdminOrSuperAdmin(user)) {
