@@ -80,8 +80,8 @@ class CommuteServiceTest {
         Beacon beacon4 = mock(Beacon.class);
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
-        when(gatewayRepository.findByMacAddr(gatewayMac1)).thenReturn(Optional.of(gateway1));
-        when(gatewayRepository.findByMacAddr(gatewayMac2)).thenReturn(Optional.of(gateway2));
+        when(gatewayRepository.findByMacAddrAndIsDeletedFalse(gatewayMac1)).thenReturn(Optional.of(gateway1));
+        when(gatewayRepository.findByMacAddrAndIsDeletedFalse(gatewayMac2)).thenReturn(Optional.of(gateway2));
         when(beaconRepository.findByMacAddrAndIsDeletedFalse("F4741C781187")).thenReturn(Optional.of(beacon1));
         when(beaconRepository.findByMacAddrAndIsDeletedFalse("DE42759B6E12")).thenReturn(Optional.of(beacon2));
         when(beaconRepository.findByMacAddrAndIsDeletedFalse("A1741C781187")).thenReturn(Optional.of(beacon3));
@@ -199,7 +199,7 @@ class CommuteServiceTest {
         Beacon beacon2 = mock(Beacon.class);
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
-        when(gatewayRepository.findByMacAddr(gatewayMac)).thenReturn(Optional.of(gateway));
+        when(gatewayRepository.findByMacAddrAndIsDeletedFalse(gatewayMac)).thenReturn(Optional.of(gateway));
         when(beaconRepository.findByMacAddrAndIsDeletedFalse("F4741C781187")).thenReturn(Optional.of(beacon1));
         when(beaconRepository.findByMacAddrAndIsDeletedFalse("DE42759B6E12")).thenReturn(Optional.of(beacon2));
         when(beacon1.getUser()).thenReturn(user1);

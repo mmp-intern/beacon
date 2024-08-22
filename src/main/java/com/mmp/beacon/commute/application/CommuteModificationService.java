@@ -36,7 +36,7 @@ public class CommuteModificationService {
             throw new UserWithoutPermissionException("직원은 근태 기록을 수정할 권한이 없습니다.");
         }
 
-        Commute commute = commuteRepository.findById(commuteId)
+        Commute commute = commuteRepository.findByIdAndIsDeletedFalse(commuteId)
                 .orElseThrow(CommuteNotFoundException::new);
 
         commute.updateTimestampByAdmin(request.startedAt(), request.endedAt());

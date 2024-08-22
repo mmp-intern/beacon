@@ -124,7 +124,7 @@ public class UserApplicationService {
             if (role != UserRole.USER && role != UserRole.ADMIN) {
                 throw new IllegalArgumentException("권한이 부족합니다.");
             }
-            company = companyRepository.findByName(userDto.getCompany())
+            company = companyRepository.findByNameAndIsDeletedFalse(userDto.getCompany())
                     .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
 
 
@@ -160,7 +160,7 @@ public class UserApplicationService {
             throw new IllegalArgumentException("인증이 필요합니다.");
         }
 
-        Company company = companyRepository.findByName(adminDto.getCompany())
+        Company company = companyRepository.findByNameAndIsDeletedFalse(adminDto.getCompany())
                 .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다.")); // 회사 정보 조회
 
         AbstractUser user = new Admin(adminDto.getUserId(), encPassword, role, company); // 새로운 관리자 객체 생성

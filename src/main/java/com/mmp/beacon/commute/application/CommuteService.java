@@ -49,7 +49,7 @@ public class CommuteService {
             return;
         }
 
-        gatewayRepository.findByMacAddr(gatewayMac)
+        gatewayRepository.findByMacAddrAndIsDeletedFalse(gatewayMac)
                 .ifPresentOrElse(
                         gateway -> beaconDataList.forEach(beaconData -> handleBeaconData(gateway, beaconData)),
                         () -> log.warn("게이트웨이 {}가 존재하지 않아 비콘 데이터 처리를 중단합니다.", gatewayMac)

@@ -66,12 +66,10 @@ public class CommuteQueryService {
 
     @Transactional(readOnly = true)
     public CommuteRecordResponse findCommuteRecord(Long userId, Long commuteId) {
-        // TODO: 예외 처리
-
         AbstractUser user = abstractUserRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        return commuteRepository.findById(commuteId)
+        return commuteRepository.findByIdAndIsDeletedFalse(commuteId)
                 .map(this::mapToCommuteRecordResponse)
                 .orElseThrow(CommuteNotFoundException::new);
     }
@@ -86,7 +84,7 @@ public class CommuteQueryService {
                     .map(Company::getId)
                     .orElseThrow(UserWithoutCompanyException::new);
         } else {
-            return companyRepository.findById(FIXED_COMPANY_ID)
+            return companyRepository.findByIdAndIsDeletedFalse(FIXED_COMPANY_ID)
                     .map(Company::getId)
                     .orElseThrow(CompanyNotFoundException::new);
         }
