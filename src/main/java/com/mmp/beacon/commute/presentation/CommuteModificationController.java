@@ -16,8 +16,8 @@ public class CommuteModificationController {
 
     @PatchMapping("/{commuteId}")
     public ResponseEntity<Void> modifyCommute(
-        @PathVariable Long commuteId,
-        @RequestBody CommuteModificationRequest request
+            @PathVariable Long commuteId,
+            @RequestBody CommuteModificationRequest request
     ) {
         Long userId = UserUtil.getCurrentUserId();
         commuteModificationService.modifyCommute(userId, commuteId, request);

@@ -25,7 +25,7 @@ public class CommuteModificationService {
      * 출퇴근 기록을 수정합니다.
      *
      * @param commuteId 수정할 출퇴근 기록의 ID
-     * @param request 수정할 출퇴근 기록 정보
+     * @param request   수정할 출퇴근 기록 정보
      */
     @Transactional
     public void modifyCommute(Long userId, Long commuteId, CommuteModificationRequest request) {

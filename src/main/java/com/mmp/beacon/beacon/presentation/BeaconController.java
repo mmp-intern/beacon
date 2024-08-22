@@ -4,11 +4,11 @@ import com.mmp.beacon.beacon.application.BeaconService;
 import com.mmp.beacon.beacon.presentation.request.BeaconRequest;
 import com.mmp.beacon.beacon.query.response.BeaconResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/api/v1/beacons")
