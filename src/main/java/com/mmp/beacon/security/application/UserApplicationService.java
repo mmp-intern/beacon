@@ -1,10 +1,12 @@
 package com.mmp.beacon.security.application;
 
+import com.mmp.beacon.beacon.domain.repository.BeaconRepository;
 import com.mmp.beacon.company.domain.Company;
 import com.mmp.beacon.company.domain.repository.CompanyRepository;
 import com.mmp.beacon.security.presentation.request.AdminCreateRequest;
 import com.mmp.beacon.security.presentation.request.CreateUserRequest;
 import com.mmp.beacon.security.presentation.request.LoginRequest;
+import com.mmp.beacon.security.presentation.request.UpdateUserRequest;
 import com.mmp.beacon.security.provider.JwtTokenProvider;
 import com.mmp.beacon.security.query.response.UserProfileResponse;
 import com.mmp.beacon.user.domain.*;
@@ -20,6 +22,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import com.mmp.beacon.beacon.domain.Beacon;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,12 +36,14 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserApplicationService {
 
+    private static final Long FIXED_COMPANY_ID = 1L; // 고정된 회사 ID
+
     private final UserRepository userRepository;
     private final AbstractUserRepository abstractUserRepository; // 사용자 저장소에 접근하기 위한 객체
     private final BCryptPasswordEncoder bCryptPasswordEncoder; // 비밀번호 암호화를 위한 객체
     private final JwtTokenProvider jwtTokenProvider; // JWT 토큰 생성을 위한 객체
     private final CompanyRepository companyRepository; // 회사 저장소에 접근하기 위한 객체
-
+    private final BeaconRepository beaconRepository; // 회사 저장소에 접근하기 위한 객체
     private final Map<String, String> refreshTokenStore = new HashMap<>(); // 리프레시 토큰 저장소
 
     // 현재 인증된 사용자 정보를 반환하는 메서드
@@ -47,6 +55,39 @@ public class UserApplicationService {
                     .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다.")); // 사용자 ID로 사용자 정보를 조회
         }
         return null; // 인증되지 않은 경우 null 반환
+    }
+
+    @Transactional
+    public void updateUserProfile(String userId, UpdateUserRequest request) {
+        AbstractUser user = abstractUserRepository.findByUserIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        if (user instanceof User) {
+            Beacon beacon = request.getMacAddr() != null
+                    ? beaconRepository.findByMacAddrAndIsDeletedFalse(request.getMacAddr())
+                    .filter(b -> b.getUser() == null || b.getUser().equals(user))
+                    .orElse(null)
+                    : null;
+
+            ((User) user).updateProfile(
+                    request.getName(),
+                    request.getEmail(),
+                    request.getPhone(),
+                    request.getPosition(),
+                    beacon
+            );
+            abstractUserRepository.save(user);
+        } else {
+            throw new IllegalArgumentException("User type is not supported for profile update");
+        }
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<UserProfileResponse> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<AbstractUser> userPage = abstractUserRepository.findAllByIsDeletedFalse(pageable);
+        return userPage.map(this::createUserProfileResponse);
     }
 
     @Transactional(readOnly = true)
@@ -80,33 +121,41 @@ public class UserApplicationService {
         throw new IllegalArgumentException("같은 회사의 사용자만 조회할 수 있습니다.");
     }
 
-
     // 사용자의 회사 정보를 반환하는 메서드
     private Company getUserCompany(AbstractUser user) {
-        if (user instanceof Admin) {
-            return ((Admin) user).getCompany(); // Admin 사용자의 회사 정보를 반환
-        } else if (user instanceof User) {
-            return ((User) user).getCompany(); // User 사용자의 회사 정보를 반환
-        }
-        return null; // 회사 정보가 없는 경우 null 반환
+        return companyRepository.findByIdAndIsDeletedFalse(FIXED_COMPANY_ID)
+                .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
     }
 
-    // 새로운 사용자를 등록하는 메서드
     @Transactional
     public void register(CreateUserRequest userDto) {
         try {
-            String encPassword = bCryptPasswordEncoder.encode(userDto.getPassword()); // 비밀번호 암호화
-            UserRole role = UserRole.USER; // 역할을 항상 USER으로 지정
+            String encPassword = bCryptPasswordEncoder.encode(userDto.getPassword());
+            UserRole role = UserRole.USER;
 
-            AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
+            AbstractUser currentUser = getCurrentUser();
             if (currentUser == null) {
                 throw new IllegalArgumentException("인증이 필요합니다.");
             }
 
-            Company company = validateAndRetrieveCompany(userDto, currentUser, role); // 회사 정보를 검증 및 조회
+            // 고정된 회사 정보를 가져옴
+            Company company = companyRepository.findByIdAndIsDeletedFalse(FIXED_COMPANY_ID)
+                    .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
 
-            AbstractUser user = new User(userDto.getUserId(), encPassword, role, company, userDto.getName(), userDto.getEmail(), userDto.getPhone(), userDto.getPosition()); // 새로운 사용자 객체 생성
-            abstractUserRepository.save(user); // 사용자 저장
+            // 사용자 생성 시 회사 정보 포함
+            AbstractUser user = new User(userDto.getUserId(), encPassword, role, company, userDto.getName(), userDto.getEmail(), userDto.getPhone(), userDto.getPosition());
+            abstractUserRepository.save(user);
+
+            if (userDto.getBeaconId() != null && !userDto.getBeaconId().isEmpty()) {
+                Beacon beacon = beaconRepository.findByIdAndIsDeletedFalse(Long.parseLong(userDto.getBeaconId()))
+                        .filter(b -> b.getUser() == null || b.getUser().equals(user))
+                        .orElseThrow(() -> new IllegalArgumentException("비콘을 찾을 수 없습니다."));
+
+                // 비콘과 사용자 연결
+                beacon.assignUser((User) user);
+                beaconRepository.save(beacon);
+            }
+
             log.info("사용자 등록 성공: {}", userDto.getUserId());
         } catch (DataIntegrityViolationException e) {
             log.error("중복된 항목 오류: ", e);
@@ -117,41 +166,10 @@ public class UserApplicationService {
         }
     }
 
-    // 회사 정보를 검증 및 조회하는 메서드
-    private Company validateAndRetrieveCompany(CreateUserRequest userDto, AbstractUser currentUser, UserRole role) {
-        Company company;
-        if (currentUser.getRole() == UserRole.SUPER_ADMIN) {
-            if (role != UserRole.USER && role != UserRole.ADMIN) {
-                throw new IllegalArgumentException("권한이 부족합니다.");
-            }
-            company = companyRepository.findByNameAndIsDeletedFalse(userDto.getCompany())
-                    .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
-
-
-        } else if (currentUser.getRole() == UserRole.ADMIN) {
-            if (role != UserRole.USER) {
-                throw new IllegalArgumentException("권한이 부족합니다.");
-            }
-
-            // currentUser가 Admin 타입인지 확인
-            if (currentUser instanceof Admin) {
-                company = ((Admin) currentUser).getCompany();
-                if (company == null || !company.getName().equals(userDto.getCompany())) {
-                    throw new IllegalArgumentException("같은 회사 사용자만 생성할 수 있습니다.");
-                }
-            } else {
-                throw new IllegalArgumentException("권한 부족: Admin만 접근할 수 있습니다.");
-            }
-        } else {
-            throw new IllegalArgumentException("권한 부족.");
-        }
-        return company;
-    }
 
     // 새로운 관리자를 등록하는 메서드
     @Transactional
     public void registerAdmin(AdminCreateRequest adminDto) {
-
         String encPassword = bCryptPasswordEncoder.encode(adminDto.getPassword()); // 비밀번호 암호화
         UserRole role = UserRole.ADMIN; // 역할을 항상 ADMIN으로 지정
 
@@ -160,14 +178,13 @@ public class UserApplicationService {
             throw new IllegalArgumentException("인증이 필요합니다.");
         }
 
-        Company company = companyRepository.findByNameAndIsDeletedFalse(adminDto.getCompany())
-                .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다.")); // 회사 정보 조회
+        Company company = companyRepository.findByIdAndIsDeletedFalse(FIXED_COMPANY_ID)
+                .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다.")); // 고정된 회사 ID로 회사 조회
 
         AbstractUser user = new Admin(adminDto.getUserId(), encPassword, role, company); // 새로운 관리자 객체 생성
 
         abstractUserRepository.save(user); // 관리자 저장
         log.info("관리자 등록 성공: {}", adminDto.getUserId());
-
     }
 
     // 사용자를 인증하는 메서드
@@ -236,10 +253,6 @@ public class UserApplicationService {
             if (userToDelete.getRole() != UserRole.USER) {
                 throw new IllegalArgumentException("권한이 부족합니다: 이 사용자를 삭제할 수 없습니다.");
             }
-
-            if (!isSameCompany(currentUser, userToDelete)) {
-                throw new IllegalArgumentException("접근 거부: 같은 회사의 사용자만 삭제할 수 있습니다.");
-            }
         }
 
         userToDelete.delete(); // 소프트 삭제
@@ -247,15 +260,9 @@ public class UserApplicationService {
         log.info("사용자 삭제 성공: {}", userId);
     }
 
-    // 두 사용자가 같은 회사인지 확인하는 메서드
-    private boolean isSameCompany(AbstractUser currentUser, AbstractUser userToDelete) {
-        Company currentUserCompany = getUserCompany(currentUser);
-        Company userCompany = getUserCompany(userToDelete);
-        return currentUserCompany.equals(userCompany); // 같은 회사인지 확인
-    }
-
     // 사용자 프로필 응답을 생성하는 메서드
     private UserProfileResponse createUserProfileResponse(AbstractUser user) {
+        Beacon beacon = null;
         if (user instanceof User) {
             User specificUser = (User) user;
             return new UserProfileResponse(
@@ -265,9 +272,11 @@ public class UserApplicationService {
                     specificUser.getPosition(),
                     specificUser.getName(),
                     specificUser.getPhone(),
-                    specificUser.getCompany().getId(),
+                    FIXED_COMPANY_ID,
                     specificUser.getCompany().getName(),
-                    user.getRole().name()
+                    user.getRole().name(),
+                    beacon != null ? beacon.getId() : null,  // 비콘 ID 추가
+                    beacon != null ? beacon.getMacAddr() : null  // 비콘 MAC 주소 추가
             );
         } else if (user instanceof Admin) {
             Admin specificAdmin = (Admin) user;
@@ -278,9 +287,11 @@ public class UserApplicationService {
                     null,
                     null,
                     null,
-                    specificAdmin.getCompany().getId(),
+                    FIXED_COMPANY_ID,
                     specificAdmin.getCompany().getName(),
-                    user.getRole().name()
+                    user.getRole().name(),
+                    null,
+                    null
             );
         } else if (user instanceof SuperAdmin) {
             return new UserProfileResponse(
@@ -292,7 +303,9 @@ public class UserApplicationService {
                     null,
                     null,
                     null,
-                    user.getRole().name()
+                    user.getRole().name(),
+                    null,
+                    null
             );
         } else {
             return null; // 사용자 유형이 알 수 없는 경우 null 반환

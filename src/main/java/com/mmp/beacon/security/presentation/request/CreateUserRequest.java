@@ -1,5 +1,6 @@
 package com.mmp.beacon.security.presentation.request;
 
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -29,6 +30,5 @@ public class CreateUserRequest {
     @NotBlank(message = "직책을 입력해 주세요.")
     private String position;
 
-    @NotBlank(message = "회사를 입력해 주세요.")
-    private String company;
+    private String beaconId;
 }

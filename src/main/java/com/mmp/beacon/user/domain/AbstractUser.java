@@ -45,5 +45,7 @@ public class AbstractUser extends BaseEntity {
         this.role = role;
     }
 
+
+
 }
 
