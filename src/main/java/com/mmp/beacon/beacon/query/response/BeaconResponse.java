@@ -1,4 +1,4 @@
-package com.mmp.beacon.beacon.domain.presentation;
+package com.mmp.beacon.beacon.query.response;
 
 import lombok.Data;
 

@@ -1,4 +1,4 @@
-package com.mmp.beacon.commute.domain.repository;
+package com.mmp.beacon.commute.query.repository;
 
 import com.mmp.beacon.commute.domain.Commute;
 import com.mmp.beacon.commute.query.response.CommuteRecordInfo;

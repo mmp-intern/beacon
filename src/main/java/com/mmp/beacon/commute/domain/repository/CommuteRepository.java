@@ -1,10 +1,8 @@
 package com.mmp.beacon.commute.domain.repository;
 
-import com.mmp.beacon.commute.domain.AttendanceStatus;
 import com.mmp.beacon.commute.domain.Commute;
+import com.mmp.beacon.commute.query.repository.CustomCommuteRepository;
 import com.mmp.beacon.user.domain.User;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,32 +13,11 @@ import java.util.Optional;
 public interface CommuteRepository extends JpaRepository<Commute, Long>, CustomCommuteRepository {
 
     /**
-     * 사용자와 날짜로 출퇴근 기록을 찾습니다.
+     * 소프트 삭제되지 않은 사용자와 날짜로 출퇴근 기록을 찾습니다.
      *
      * @param user 사용자 엔티티
      * @param date 날짜
-     * @return 해당 사용자와 날짜에 해당하는 출퇴근 기록
+     * @return 해당 사용자와 날짜에 해당하는 소프트 삭제되지 않은 출퇴근 기록
      */
-    Optional<Commute> findByUserAndDate(User user, LocalDate date);
-
-    /**
-     * 특정 날짜와 회사 ID로 출퇴근 기록을 페이징하여 찾습니다.
-     *
-     * @param data      날짜
-     * @param companyId 회사 ID
-     * @param pageable  페이지 정보
-     * @return 페이징된 출퇴근 기록
-     */
-    Page<Commute> findAllByDateAndUser_Company_Id(LocalDate data, Long companyId, Pageable pageable);
-
-    /**
-     * 특정 사용자의 지정된 기간 동안의 출퇴근 기록을 출석 상태별로 집계합니다.
-     *
-     * @param user      조회할 사용자
-     * @param startDate 조회할 시작 날짜
-     * @param endDate   조회할 종료 날짜
-     * @param status    조회할 출석 상태
-     * @return 해당 기간 동안의 출석 상태에 해당하는 출퇴근 기록 수
-     */
-    long countByUserAndDateBetweenAndAttendanceStatus(User user, LocalDate startDate, LocalDate endDate, AttendanceStatus status);
+    Optional<Commute> findByUserAndDateAndIsDeletedFalse(User user, LocalDate date);
 }

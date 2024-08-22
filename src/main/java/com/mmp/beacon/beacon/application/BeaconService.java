@@ -1,8 +1,8 @@
-package com.mmp.beacon.beacon.domain.application;
+package com.mmp.beacon.beacon.application;
 
 import com.mmp.beacon.beacon.domain.Beacon;
-import com.mmp.beacon.beacon.domain.presentation.BeaconRequest;
-import com.mmp.beacon.beacon.domain.presentation.BeaconResponse;
+import com.mmp.beacon.beacon.presentation.request.BeaconRequest;
+import com.mmp.beacon.beacon.query.response.BeaconResponse;
 import com.mmp.beacon.beacon.domain.repository.BeaconRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,8 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
