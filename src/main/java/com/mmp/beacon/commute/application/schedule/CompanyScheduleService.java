@@ -52,7 +52,7 @@ public class CompanyScheduleService implements ScheduleService {
     @Scheduled(cron = "0 0 0 * * *")
     public void scheduleDailyCompanyTasks() {
         log.info("매일 회사별 스케줄 작업을 등록 시작");
-        companyRepository.findAll().forEach(this::scheduleCompanyTasks);
+        companyRepository.findAllByIsDeletedFalse().forEach(this::scheduleCompanyTasks);
         log.info("매일 회사별 스케줄 작업을 등록 완료");
     }
 
@@ -82,9 +82,9 @@ public class CompanyScheduleService implements ScheduleService {
      * 기존에 등록된 작업이 있다면 취소한 후 새로운 작업을 등록합니다.
      *
      * @param companyId 회사 ID
-     * @param time 작업 실행 시간
-     * @param task 실행할 작업
-     * @param taskMap 작업을 저장할 맵
+     * @param time      작업 실행 시간
+     * @param task      실행할 작업
+     * @param taskMap   작업을 저장할 맵
      */
     private void scheduleTask(Long companyId, LocalTime time, Runnable task, Map<Long, ScheduledFuture<?>> taskMap) {
         cancelScheduledTask(taskMap, companyId);
@@ -112,7 +112,7 @@ public class CompanyScheduleService implements ScheduleService {
     /**
      * 기존 스케줄 작업을 취소합니다.
      *
-     * @param taskMap 스케줄 작업 맵
+     * @param taskMap   스케줄 작업 맵
      * @param companyId 회사 ID
      */
     private void cancelScheduledTask(Map<Long, ScheduledFuture<?>> taskMap, Long companyId) {

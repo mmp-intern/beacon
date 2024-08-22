@@ -7,5 +7,12 @@ import java.util.Optional;
 
 
 public interface SuperAdminRepository extends JpaRepository<SuperAdmin, Long> {
-    Optional<SuperAdmin> findByUserId(String userId);
+
+    /**
+     * 소프트 삭제되지 않은 슈퍼 관리자를 ID로 조회합니다.
+     *
+     * @param id 사용자 ID
+     * @return 소프트 삭제되지 않은 슈퍼 관리자
+     */
+    Optional<SuperAdmin> findByIdAndIsDeletedFalse(Long id);
 }

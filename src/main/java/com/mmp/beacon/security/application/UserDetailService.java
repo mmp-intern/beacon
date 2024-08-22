@@ -16,7 +16,7 @@ public class UserDetailService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
-        AbstractUser user = abstractUserRepository.findByUserId(userId)
+        AbstractUser user = abstractUserRepository.findByUserIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
         return new CustomUserDetails(user);
     }

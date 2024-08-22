@@ -25,18 +25,18 @@ public class CommuteModificationService {
      * 출퇴근 기록을 수정합니다.
      *
      * @param commuteId 수정할 출퇴근 기록의 ID
-     * @param request 수정할 출퇴근 기록 정보
+     * @param request   수정할 출퇴근 기록 정보
      */
     @Transactional
     public void modifyCommute(Long userId, Long commuteId, CommuteModificationRequest request) {
-        AbstractUser user = abstractUserRepository.findById(userId)
+        AbstractUser user = abstractUserRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(UserNotFoundException::new);
 
         if (!isAdminOrSuperAdmin(user)) {
             throw new UserWithoutPermissionException("직원은 근태 기록을 수정할 권한이 없습니다.");
         }
 
-        Commute commute = commuteRepository.findById(commuteId)
+        Commute commute = commuteRepository.findByIdAndIsDeletedFalse(commuteId)
                 .orElseThrow(CommuteNotFoundException::new);
 
         commute.updateTimestampByAdmin(request.startedAt(), request.endedAt());

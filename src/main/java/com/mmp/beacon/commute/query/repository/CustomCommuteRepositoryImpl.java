@@ -1,4 +1,4 @@
-package com.mmp.beacon.commute.domain.repository;
+package com.mmp.beacon.commute.query.repository;
 
 import com.mmp.beacon.commute.domain.AttendanceStatus;
 import com.mmp.beacon.commute.domain.Commute;
@@ -49,7 +49,9 @@ public class CustomCommuteRepositoryImpl implements CustomCommuteRepository {
 
         BooleanExpression predicate = commute.user.company.id.eq(companyId)
                 .and(commute.date.between(startDate, endDate))
-                .and(buildSearchPredicate(user, searchTerm, searchBy));
+                .and(buildSearchPredicate(user, searchTerm, searchBy))
+                .and(commute.isDeleted.isFalse())
+                .and(user.isDeleted.isFalse());
 
         List<OrderSpecifier<?>> orderSpecifiers = getOrderSpecifiers(pageable, user, commute);
 
@@ -81,8 +83,9 @@ public class CustomCommuteRepositoryImpl implements CustomCommuteRepository {
         QCommute commute = QCommute.commute;
         QUser user = QUser.user;
 
-        BooleanExpression companyPredicate = user.company.id.eq(companyId);
+        BooleanExpression companyPredicate = user.company.id.eq(companyId).and(user.isDeleted.isFalse());
         BooleanExpression searchPredicate = buildSearchPredicate(user, searchTerm, searchBy);
+        BooleanExpression deletedPredicate = commute.isDeleted.isFalse();
 
         List<OrderSpecifier<?>> orderSpecifiers = getOrderSpecifiers(pageable, user, commute);
 
@@ -99,7 +102,7 @@ public class CustomCommuteRepositoryImpl implements CustomCommuteRepository {
                         commute.workStatus
                 ))
                 .from(user)
-                .leftJoin(commute).on(commute.user.id.eq(user.id).and(commute.date.eq(date)))
+                .leftJoin(commute).on(commute.user.id.eq(user.id).and(commute.date.eq(date)).and(deletedPredicate))
                 .where(companyPredicate.and(searchPredicate))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -113,6 +116,77 @@ public class CustomCommuteRepositoryImpl implements CustomCommuteRepository {
                 .orElse(0L);
 
         return new PageImpl<>(results, pageable, total);
+    }
+
+    @Override
+    public Page<CommuteStatisticsResponse> findCommuteStatistics(
+            Long companyId,
+            LocalDate startDate,
+            LocalDate endDate,
+            String searchTerm,
+            String searchBy,
+            Pageable pageable
+    ) {
+        QCommute commute = QCommute.commute;
+        QUser user = QUser.user;
+
+        BooleanExpression companyPredicate = user.company.id.eq(companyId).and(user.isDeleted.isFalse());
+        BooleanExpression datePredicate = commute.date.between(startDate, endDate);
+        BooleanExpression searchPredicate = buildSearchPredicate(user, searchTerm, searchBy);
+        BooleanExpression deletedPredicate = commute.isDeleted.isFalse();
+
+        List<OrderSpecifier<?>> orderSpecifiers = getStatisticsOrderSpecifiers(pageable, user, commute);
+
+        List<CommuteStatisticsInfo> results = queryFactory
+                .select(Projections.constructor(CommuteStatisticsInfo.class,
+                        user.id,
+                        user.userId,
+                        user.name,
+                        new CaseBuilder()
+                                .when(commute.attendanceStatus.eq(AttendanceStatus.PRESENT))
+                                .then(1L)
+                                .otherwise(0L)
+                                .sum().as("presentDays"),
+                        new CaseBuilder()
+                                .when(commute.attendanceStatus.eq(AttendanceStatus.LATE))
+                                .then(1L)
+                                .otherwise(0L)
+                                .sum().as("lateDays"),
+                        new CaseBuilder()
+                                .when(commute.attendanceStatus.eq(AttendanceStatus.ABSENT))
+                                .then(1L)
+                                .otherwise(0L)
+                                .sum().as("absentDays"),
+                        commute.count().as("totalDays")
+                ))
+                .from(user)
+                .leftJoin(commute).on(commute.user.id.eq(user.id).and(datePredicate).and(deletedPredicate))
+                .where(companyPredicate.and(searchPredicate))
+                .groupBy(user.id)
+                .orderBy(orderSpecifiers.toArray(new OrderSpecifier[0]))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        long total = Optional.ofNullable(queryFactory.select(user.count())
+                        .from(user)
+                        .where(companyPredicate.and(searchPredicate))
+                        .fetchOne())
+                .orElse(0L);
+
+        List<CommuteStatisticsResponse> responses = results.stream()
+                .map(info -> new CommuteStatisticsResponse(
+                        new CommuteStatisticsResponse.UserInfo(info.getUserId(), info.getUserLoginId(), info.getUserName()),
+                        new CommuteStatisticsResponse.CommuteStatistics(
+                                info.getPresentDays(),
+                                info.getLateDays(),
+                                info.getAbsentDays(),
+                                info.getTotalDays()
+                        )
+                ))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(responses, pageable, total);
     }
 
     private BooleanExpression buildSearchPredicate(QUser user, String searchTerm, String searchBy) {
@@ -163,71 +237,6 @@ public class CustomCommuteRepositoryImpl implements CustomCommuteRepository {
         return orderSpecifiers;
     }
 
-    public Page<CommuteStatisticsResponse> findCommuteStatistics(
-            Long companyId,
-            LocalDate startDate,
-            LocalDate endDate,
-            String searchTerm,
-            String searchBy,
-            Pageable pageable
-    ) {
-        QCommute commute = QCommute.commute;
-        QUser user = QUser.user;
-
-        BooleanExpression companyPredicate = user.company.id.eq(companyId);
-        BooleanExpression datePredicate = commute.date.between(startDate, endDate);
-        BooleanExpression searchPredicate = buildSearchPredicate(user, searchTerm, searchBy);
-
-        List<OrderSpecifier<?>> orderSpecifiers = getStatisticsOrderSpecifiers(pageable, user, commute);
-
-        List<CommuteStatisticsInfo> results = queryFactory
-                .select(Projections.constructor(CommuteStatisticsInfo.class,
-                        user.id,
-                        user.userId,
-                        user.name,
-                        new CaseBuilder()
-                                .when(commute.attendanceStatus.eq(AttendanceStatus.PRESENT))
-                                .then(1L)
-                                .otherwise(0L)
-                                .sum().as("presentDays"),
-                        new CaseBuilder()
-                                .when(commute.attendanceStatus.eq(AttendanceStatus.LATE))
-                                .then(1L)
-                                .otherwise(0L)
-                                .sum().as("lateDays"),
-                        new CaseBuilder()
-                                .when(commute.attendanceStatus.eq(AttendanceStatus.ABSENT))
-                                .then(1L)
-                                .otherwise(0L)
-                                .sum().as("absentDays"),
-                        commute.count().as("totalDays")
-                ))
-                .from(user)
-                .leftJoin(commute).on(commute.user.id.eq(user.id).and(datePredicate))
-                .where(companyPredicate.and(searchPredicate))
-                .groupBy(user.id)
-                .orderBy(orderSpecifiers.toArray(new OrderSpecifier[0]))
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
-
-        long total = results.size();
-
-        List<CommuteStatisticsResponse> responses = results.stream()
-                .map(info -> new CommuteStatisticsResponse(
-                        new CommuteStatisticsResponse.UserInfo(info.getUserId(), info.getUserLoginId(), info.getUserName()),
-                        new CommuteStatisticsResponse.CommuteStatistics(
-                                info.getPresentDays(),
-                                info.getLateDays(),
-                                info.getAbsentDays(),
-                                info.getTotalDays()
-                        )
-                ))
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(responses, pageable, total);
-    }
-
     private List<OrderSpecifier<?>> getStatisticsOrderSpecifiers(Pageable pageable, QUser user, QCommute commute) {
         List<OrderSpecifier<?>> orderSpecifiers = new ArrayList<>();
         pageable.getSort().forEach(order -> {
@@ -261,5 +270,4 @@ public class CustomCommuteRepositoryImpl implements CustomCommuteRepository {
         });
         return orderSpecifiers;
     }
-
 }

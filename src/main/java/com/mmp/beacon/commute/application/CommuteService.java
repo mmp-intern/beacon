@@ -49,7 +49,7 @@ public class CommuteService {
             return;
         }
 
-        gatewayRepository.findByMacAddr(gatewayMac)
+        gatewayRepository.findByMacAddrAndIsDeletedFalse(gatewayMac)
                 .ifPresentOrElse(
                         gateway -> beaconDataList.forEach(beaconData -> handleBeaconData(gateway, beaconData)),
                         () -> log.warn("게이트웨이 {}가 존재하지 않아 비콘 데이터 처리를 중단합니다.", gatewayMac)
@@ -65,7 +65,7 @@ public class CommuteService {
      * @param beaconData 비콘 데이터
      */
     private void handleBeaconData(Gateway gateway, BeaconData beaconData) {
-        beaconRepository.findByMacAddr(beaconData.mac())
+        beaconRepository.findByMacAddrAndIsDeletedFalse(beaconData.mac())
                 .map(Beacon::getUser)
                 .ifPresentOrElse(
                         user -> {
@@ -89,7 +89,7 @@ public class CommuteService {
      */
     private void processBeaconData(User user, BeaconData beaconData) {
         LocalDate today = timeService.nowDate();
-        commuteRepository.findByUserAndDate(user, today)
+        commuteRepository.findByUserAndDateAndIsDeletedFalse(user, today)
                 .ifPresentOrElse(
                         commute -> handleExistingCommute(commute, beaconData),
                         () -> handleNewCommute(user, beaconData)
@@ -161,8 +161,8 @@ public class CommuteService {
         }
         log.info("회사 ID {}에 대한 지각자를 기록합니다.", companyId);
         LocalDate today = timeService.nowDate();
-        userRepository.findByCompanyId(companyId).stream()
-                .filter(user -> commuteRepository.findByUserAndDate(user, today).isEmpty())
+        userRepository.findByCompanyIdAndIsDeletedFalse(companyId).stream()
+                .filter(user -> commuteRepository.findByUserAndDateAndIsDeletedFalse(user, today).isEmpty())
                 .forEach(this::markLateArrival);
     }
 
@@ -198,7 +198,7 @@ public class CommuteService {
         }
         LocalDate today = timeService.nowDate();
         LocalDateTime nowMinus5Minutes = timeService.nowDateTime().minusMinutes(5);
-        userRepository.findAll().forEach(user -> commuteRepository.findByUserAndDate(user, today)
+        userRepository.findAllByIsDeletedFalse().forEach(user -> commuteRepository.findByUserAndDateAndIsDeletedFalse(user, today)
                 .ifPresent(commute -> {
                     if (commute.getWorkStatus() == WorkStatus.IN_OFFICE &&
                             nowMinus5Minutes.isAfter(commute.getEndedAt().atDate(today))) {
@@ -223,8 +223,8 @@ public class CommuteService {
         }
         log.info("회사 ID {}에 대한 결근자를 기록합니다.", companyId);
         LocalDate today = timeService.nowDate();
-        userRepository.findByCompanyId(companyId).stream()
-                .map(user -> commuteRepository.findByUserAndDate(user, today))
+        userRepository.findByCompanyIdAndIsDeletedFalse(companyId).stream()
+                .map(user -> commuteRepository.findByUserAndDateAndIsDeletedFalse(user, today))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .filter(commute -> commute.getAttendanceStatus() == AttendanceStatus.LATE && commute.getStartedAt() == null && commute.getEndedAt() == null)

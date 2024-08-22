@@ -80,12 +80,12 @@ class CommuteServiceTest {
         Beacon beacon4 = mock(Beacon.class);
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
-        when(gatewayRepository.findByMacAddr(gatewayMac1)).thenReturn(Optional.of(gateway1));
-        when(gatewayRepository.findByMacAddr(gatewayMac2)).thenReturn(Optional.of(gateway2));
-        when(beaconRepository.findByMacAddr("F4741C781187")).thenReturn(Optional.of(beacon1));
-        when(beaconRepository.findByMacAddr("DE42759B6E12")).thenReturn(Optional.of(beacon2));
-        when(beaconRepository.findByMacAddr("A1741C781187")).thenReturn(Optional.of(beacon3));
-        when(beaconRepository.findByMacAddr("BE42759B6E12")).thenReturn(Optional.of(beacon4));
+        when(gatewayRepository.findByMacAddrAndIsDeletedFalse(gatewayMac1)).thenReturn(Optional.of(gateway1));
+        when(gatewayRepository.findByMacAddrAndIsDeletedFalse(gatewayMac2)).thenReturn(Optional.of(gateway2));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("F4741C781187")).thenReturn(Optional.of(beacon1));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("DE42759B6E12")).thenReturn(Optional.of(beacon2));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("A1741C781187")).thenReturn(Optional.of(beacon3));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("BE42759B6E12")).thenReturn(Optional.of(beacon4));
         when(beacon1.getUser()).thenReturn(user1);
         when(beacon2.getUser()).thenReturn(user2);
         when(beacon3.getUser()).thenReturn(user3);
@@ -151,9 +151,9 @@ class CommuteServiceTest {
         Company company = mock(Company.class);
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
-        when(userRepository.findByCompanyId(companyId)).thenReturn(List.of(user1, user2));
-        when(commuteRepository.findByUserAndDate(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.empty());
-        when(commuteRepository.findByUserAndDate(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.empty());
+        when(userRepository.findByCompanyIdAndIsDeletedFalse(companyId)).thenReturn(List.of(user1, user2));
+        when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.empty());
+        when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.empty());
         when(user1.getCompany()).thenReturn(company);
         when(user2.getCompany()).thenReturn(company);
         when(company.getStartTime()).thenReturn(LocalTime.of(9, 0));
@@ -199,9 +199,9 @@ class CommuteServiceTest {
         Beacon beacon2 = mock(Beacon.class);
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
-        when(gatewayRepository.findByMacAddr(gatewayMac)).thenReturn(Optional.of(gateway));
-        when(beaconRepository.findByMacAddr("F4741C781187")).thenReturn(Optional.of(beacon1));
-        when(beaconRepository.findByMacAddr("DE42759B6E12")).thenReturn(Optional.of(beacon2));
+        when(gatewayRepository.findByMacAddrAndIsDeletedFalse(gatewayMac)).thenReturn(Optional.of(gateway));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("F4741C781187")).thenReturn(Optional.of(beacon1));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("DE42759B6E12")).thenReturn(Optional.of(beacon2));
         when(beacon1.getUser()).thenReturn(user1);
         when(beacon2.getUser()).thenReturn(user2);
         when(gateway.getCompany()).thenReturn(company);
@@ -209,8 +209,8 @@ class CommuteServiceTest {
         when(user2.getCompany()).thenReturn(company);
         when(company.getStartTime()).thenReturn(LocalTime.of(9, 0));
         when(company.getEndTime()).thenReturn(LocalTime.of(18, 0));
-        when(commuteRepository.findByUserAndDate(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(new Commute(user1, LocalDate.of(2024, 7, 23), LocalTime.of(8, 0), LocalTime.of(8, 1), AttendanceStatus.PRESENT, WorkStatus.IN_OFFICE)));
-        when(commuteRepository.findByUserAndDate(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(new Commute(user2, LocalDate.of(2024, 7, 23), LocalTime.of(8, 1), LocalTime.of(8, 2), AttendanceStatus.PRESENT, WorkStatus.IN_OFFICE)));
+        when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(new Commute(user1, LocalDate.of(2024, 7, 23), LocalTime.of(8, 0), LocalTime.of(8, 1), AttendanceStatus.PRESENT, WorkStatus.IN_OFFICE)));
+        when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(new Commute(user2, LocalDate.of(2024, 7, 23), LocalTime.of(8, 1), LocalTime.of(8, 2), AttendanceStatus.PRESENT, WorkStatus.IN_OFFICE)));
 
         // When
         commuteService.processAttendance(gatewayMac, List.of(beaconData1, beaconData2));
@@ -246,8 +246,8 @@ class CommuteServiceTest {
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
         when(timeService.nowDateTime()).thenReturn(LocalDateTime.of(2024, 7, 23, 18, 6));
-        when(userRepository.findAll()).thenReturn(List.of(user));
-        when(commuteRepository.findByUserAndDate(user, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(existingCommute));
+        when(userRepository.findAllByIsDeletedFalse()).thenReturn(List.of(user));
+        when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(existingCommute));
 
         // When
         commuteService.markLeaveOrOutOffice();
@@ -275,9 +275,9 @@ class CommuteServiceTest {
         Commute lateCommute2 = new Commute(user2, LocalDate.of(2024, 7, 23), null, null, AttendanceStatus.LATE, WorkStatus.OUT_OFF_OFFICE);
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
-        when(userRepository.findByCompanyId(companyId)).thenReturn(List.of(user1, user2));
-        when(commuteRepository.findByUserAndDate(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(lateCommute1));
-        when(commuteRepository.findByUserAndDate(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(lateCommute2));
+        when(userRepository.findByCompanyIdAndIsDeletedFalse(companyId)).thenReturn(List.of(user1, user2));
+        when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(lateCommute1));
+        when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(lateCommute2));
 
         // When
         commuteService.markAbsentees(companyId);

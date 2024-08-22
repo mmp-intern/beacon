@@ -43,7 +43,7 @@ public class UserApplicationService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication(); // 현재 인증 정보를 가져옴
         if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails) {
             CustomUserDetails userDetail = (CustomUserDetails) auth.getPrincipal(); // 사용자 세부 정보를 가져옴
-            return abstractUserRepository.findByUserId(userDetail.getUsername())
+            return abstractUserRepository.findByUserIdAndIsDeletedFalse(userDetail.getUsername())
                     .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다.")); // 사용자 ID로 사용자 정보를 조회
         }
         return null; // 인증되지 않은 경우 null 반환
@@ -124,7 +124,7 @@ public class UserApplicationService {
             if (role != UserRole.USER && role != UserRole.ADMIN) {
                 throw new IllegalArgumentException("권한이 부족합니다.");
             }
-            company = companyRepository.findByName(userDto.getCompany())
+            company = companyRepository.findByNameAndIsDeletedFalse(userDto.getCompany())
                     .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
 
 
@@ -160,7 +160,7 @@ public class UserApplicationService {
             throw new IllegalArgumentException("인증이 필요합니다.");
         }
 
-        Company company = companyRepository.findByName(adminDto.getCompany())
+        Company company = companyRepository.findByNameAndIsDeletedFalse(adminDto.getCompany())
                 .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다.")); // 회사 정보 조회
 
         AbstractUser user = new Admin(adminDto.getUserId(), encPassword, role, company); // 새로운 관리자 객체 생성
@@ -205,7 +205,7 @@ public class UserApplicationService {
             String storedRefreshToken = refreshTokenStore.get(username);
 
             if (storedRefreshToken != null && storedRefreshToken.equals(refreshToken)) {
-                Optional<AbstractUser> userOpt = abstractUserRepository.findByUserId(username);
+                Optional<AbstractUser> userOpt = abstractUserRepository.findByUserIdAndIsDeletedFalse(username);
                 if (userOpt.isPresent()) {
                     return jwtTokenProvider.generateToken(new CustomUserDetails(userOpt.get())); // 새로운 액세스 토큰 발급
                 }
@@ -229,7 +229,7 @@ public class UserApplicationService {
             throw new IllegalArgumentException("권한이 부족합니다: 사용자를 삭제할 수 없습니다.");
         }
 
-        AbstractUser userToDelete = abstractUserRepository.findByUserId(userId)
+        AbstractUser userToDelete = abstractUserRepository.findByUserIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다.")); // 사용자 ID로 삭제할 사용자 정보를 조회
         log.info("삭제 요청된 사용자 ID: {}", userId);
         if (currentUserRole == UserRole.ADMIN) {

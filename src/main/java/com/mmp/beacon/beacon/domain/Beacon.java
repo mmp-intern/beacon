@@ -29,8 +29,7 @@ public class Beacon extends BaseEntity {
         this.macAddr = macAddr;
     }
 
-    public void updateMacAddr(String macAddr)
-    {
+    public void updateMacAddr(String macAddr) {
         this.macAddr = macAddr;
     }
 

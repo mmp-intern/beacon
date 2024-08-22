@@ -25,7 +25,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         String userId = authentication.getName();
         String password = authentication.getCredentials().toString();
 
-        AbstractUser user = abstractUserRepository.findByUserId(userId)
+        AbstractUser user = abstractUserRepository.findByUserIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
 
         if (!bCryptPasswordEncoder.matches(password, user.getPassword())) {

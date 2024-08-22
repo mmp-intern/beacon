@@ -1,7 +1,7 @@
-package com.mmp.beacon.beacon.domain.presentation;
+package com.mmp.beacon.beacon.presentation.request;
 
-import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
 @Data
 public class BeaconRequest {
