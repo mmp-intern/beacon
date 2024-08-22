@@ -161,7 +161,7 @@ public class CommuteService {
         }
         log.info("회사 ID {}에 대한 지각자를 기록합니다.", companyId);
         LocalDate today = timeService.nowDate();
-        userRepository.findByCompanyId(companyId).stream()
+        userRepository.findByCompanyIdAndIsDeletedFalse(companyId).stream()
                 .filter(user -> commuteRepository.findByUserAndDateAndIsDeletedFalse(user, today).isEmpty())
                 .forEach(this::markLateArrival);
     }
@@ -223,7 +223,7 @@ public class CommuteService {
         }
         log.info("회사 ID {}에 대한 결근자를 기록합니다.", companyId);
         LocalDate today = timeService.nowDate();
-        userRepository.findByCompanyId(companyId).stream()
+        userRepository.findByCompanyIdAndIsDeletedFalse(companyId).stream()
                 .map(user -> commuteRepository.findByUserAndDateAndIsDeletedFalse(user, today))
                 .filter(Optional::isPresent)
                 .map(Optional::get)

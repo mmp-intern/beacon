@@ -8,5 +8,12 @@ import java.util.List;
 
 @Repository
 public interface AdminRepository extends JpaRepository<Admin, Long> {
-    List<Admin> findByCompanyId(Long companyId);
+
+    /**
+     * 소프트 삭제되지 않은 관리자를 회사 ID로 조회합니다.
+     *
+     * @param companyId 회사 ID
+     * @return 소프트 삭제되지 않은 관리자 목록
+     */
+    List<Admin> findByCompanyIdAndIsDeletedFalse(Long companyId);
 }

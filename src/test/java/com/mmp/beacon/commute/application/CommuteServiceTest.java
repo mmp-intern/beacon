@@ -151,7 +151,7 @@ class CommuteServiceTest {
         Company company = mock(Company.class);
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
-        when(userRepository.findByCompanyId(companyId)).thenReturn(List.of(user1, user2));
+        when(userRepository.findByCompanyIdAndIsDeletedFalse(companyId)).thenReturn(List.of(user1, user2));
         when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.empty());
         when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.empty());
         when(user1.getCompany()).thenReturn(company);
@@ -275,7 +275,7 @@ class CommuteServiceTest {
         Commute lateCommute2 = new Commute(user2, LocalDate.of(2024, 7, 23), null, null, AttendanceStatus.LATE, WorkStatus.OUT_OFF_OFFICE);
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
-        when(userRepository.findByCompanyId(companyId)).thenReturn(List.of(user1, user2));
+        when(userRepository.findByCompanyIdAndIsDeletedFalse(companyId)).thenReturn(List.of(user1, user2));
         when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user1, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(lateCommute1));
         when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user2, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(lateCommute2));
 
