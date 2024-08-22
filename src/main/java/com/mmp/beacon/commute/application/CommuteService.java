@@ -65,7 +65,7 @@ public class CommuteService {
      * @param beaconData 비콘 데이터
      */
     private void handleBeaconData(Gateway gateway, BeaconData beaconData) {
-        beaconRepository.findByMacAddr(beaconData.mac())
+        beaconRepository.findByMacAddrAndIsDeletedFalse(beaconData.mac())
                 .map(Beacon::getUser)
                 .ifPresentOrElse(
                         user -> {

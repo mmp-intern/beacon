@@ -82,10 +82,10 @@ class CommuteServiceTest {
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
         when(gatewayRepository.findByMacAddr(gatewayMac1)).thenReturn(Optional.of(gateway1));
         when(gatewayRepository.findByMacAddr(gatewayMac2)).thenReturn(Optional.of(gateway2));
-        when(beaconRepository.findByMacAddr("F4741C781187")).thenReturn(Optional.of(beacon1));
-        when(beaconRepository.findByMacAddr("DE42759B6E12")).thenReturn(Optional.of(beacon2));
-        when(beaconRepository.findByMacAddr("A1741C781187")).thenReturn(Optional.of(beacon3));
-        when(beaconRepository.findByMacAddr("BE42759B6E12")).thenReturn(Optional.of(beacon4));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("F4741C781187")).thenReturn(Optional.of(beacon1));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("DE42759B6E12")).thenReturn(Optional.of(beacon2));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("A1741C781187")).thenReturn(Optional.of(beacon3));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("BE42759B6E12")).thenReturn(Optional.of(beacon4));
         when(beacon1.getUser()).thenReturn(user1);
         when(beacon2.getUser()).thenReturn(user2);
         when(beacon3.getUser()).thenReturn(user3);
@@ -200,8 +200,8 @@ class CommuteServiceTest {
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
         when(gatewayRepository.findByMacAddr(gatewayMac)).thenReturn(Optional.of(gateway));
-        when(beaconRepository.findByMacAddr("F4741C781187")).thenReturn(Optional.of(beacon1));
-        when(beaconRepository.findByMacAddr("DE42759B6E12")).thenReturn(Optional.of(beacon2));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("F4741C781187")).thenReturn(Optional.of(beacon1));
+        when(beaconRepository.findByMacAddrAndIsDeletedFalse("DE42759B6E12")).thenReturn(Optional.of(beacon2));
         when(beacon1.getUser()).thenReturn(user1);
         when(beacon2.getUser()).thenReturn(user2);
         when(gateway.getCompany()).thenReturn(company);
