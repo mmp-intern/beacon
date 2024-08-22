@@ -19,6 +19,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByIdAndIsDeletedFalse(Long id);
 
     /**
+     * 소프트 삭제되지 않은 모든 사용자를 조회합니다.
+     *
+     * @return 소프트 삭제되지 않은 사용자 목록
+     */
+    List<User> findAllByIsDeletedFalse();
+
+    /**
      * 소프트 삭제되지 않은 사용자를 회사 ID로 조회합니다.
      *
      * @param companyId 회사 ID

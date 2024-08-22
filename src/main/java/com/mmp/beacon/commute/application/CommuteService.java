@@ -198,7 +198,7 @@ public class CommuteService {
         }
         LocalDate today = timeService.nowDate();
         LocalDateTime nowMinus5Minutes = timeService.nowDateTime().minusMinutes(5);
-        userRepository.findAll().forEach(user -> commuteRepository.findByUserAndDateAndIsDeletedFalse(user, today)
+        userRepository.findAllByIsDeletedFalse().forEach(user -> commuteRepository.findByUserAndDateAndIsDeletedFalse(user, today)
                 .ifPresent(commute -> {
                     if (commute.getWorkStatus() == WorkStatus.IN_OFFICE &&
                             nowMinus5Minutes.isAfter(commute.getEndedAt().atDate(today))) {

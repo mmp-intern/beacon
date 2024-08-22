@@ -246,7 +246,7 @@ class CommuteServiceTest {
 
         when(timeService.nowDate()).thenReturn(LocalDate.of(2024, 7, 23));
         when(timeService.nowDateTime()).thenReturn(LocalDateTime.of(2024, 7, 23, 18, 6));
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAllByIsDeletedFalse()).thenReturn(List.of(user));
         when(commuteRepository.findByUserAndDateAndIsDeletedFalse(user, LocalDate.of(2024, 7, 23))).thenReturn(Optional.of(existingCommute));
 
         // When

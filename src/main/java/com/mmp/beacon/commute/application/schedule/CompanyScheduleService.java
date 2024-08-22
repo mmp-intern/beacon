@@ -52,7 +52,7 @@ public class CompanyScheduleService implements ScheduleService {
     @Scheduled(cron = "0 0 0 * * *")
     public void scheduleDailyCompanyTasks() {
         log.info("매일 회사별 스케줄 작업을 등록 시작");
-        companyRepository.findAll().forEach(this::scheduleCompanyTasks);
+        companyRepository.findAllByIsDeletedFalse().forEach(this::scheduleCompanyTasks);
         log.info("매일 회사별 스케줄 작업을 등록 완료");
     }
 
