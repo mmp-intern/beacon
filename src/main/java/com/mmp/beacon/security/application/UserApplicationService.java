@@ -30,6 +30,7 @@ import com.mmp.beacon.beacon.domain.Beacon;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -84,11 +85,25 @@ public class UserApplicationService {
 
 
     @Transactional(readOnly = true)
-    public Page<UserProfileResponse> getAllUsers(int page, int size) {
+    public Page<UserProfileResponse> getAllUsers(int page, int size, String searchTerm, String searchBy) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<AbstractUser> userPage = abstractUserRepository.findAllByIsDeletedFalse(pageable);
+        Page<User> userPage;
+
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            if ("id".equalsIgnoreCase(searchBy)) {
+                userPage = userRepository.findByUserIdContainingAndIsDeletedFalse(searchTerm, pageable);
+            } else if ("name".equalsIgnoreCase(searchBy)) {
+                userPage = userRepository.findByNameContainingAndIsDeletedFalse(searchTerm, pageable);
+            } else {
+                throw new IllegalArgumentException("Invalid searchBy parameter. Must be 'id' or 'name'.");
+            }
+        } else {
+            userPage = userRepository.findAllByIsDeletedFalse(pageable);
+        }
+
         return userPage.map(this::createUserProfileResponse);
     }
+
 
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(String userId) {
@@ -265,6 +280,13 @@ public class UserApplicationService {
         Beacon beacon = null;
         if (user instanceof User) {
             User specificUser = (User) user;
+
+            // Fetch the beacon associated with the user, if any
+            Optional<Beacon> beaconOpt = beaconRepository.findByUserAndIsDeletedFalse(specificUser);
+            if (beaconOpt.isPresent()) {
+                beacon = beaconOpt.get();
+            }
+
             return new UserProfileResponse(
                     user.getId(),
                     user.getUserId(),
@@ -275,8 +297,8 @@ public class UserApplicationService {
                     FIXED_COMPANY_ID,
                     specificUser.getCompany().getName(),
                     user.getRole().name(),
-                    beacon != null ? beacon.getId() : null,  // 비콘 ID 추가
-                    beacon != null ? beacon.getMacAddr() : null  // 비콘 MAC 주소 추가
+                    beacon != null ? beacon.getId() : null,  // Beacon ID
+                    beacon != null ? List.of(beacon.getMacAddr()) : null  // Beacon MAC Address
             );
         } else if (user instanceof Admin) {
             Admin specificAdmin = (Admin) user;
@@ -308,7 +330,7 @@ public class UserApplicationService {
                     null
             );
         } else {
-            return null; // 사용자 유형이 알 수 없는 경우 null 반환
+            return null; // Return null if the user type is unknown
         }
     }
 }

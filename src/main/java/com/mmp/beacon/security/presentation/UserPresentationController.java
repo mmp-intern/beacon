@@ -37,8 +37,10 @@ public class UserPresentationController {
     @GetMapping("/getusers")
     public Page<UserProfileResponse> getUsers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return userApplicationService.getAllUsers(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false, defaultValue = "id") String searchBy) {
+        return userApplicationService.getAllUsers(page, size, searchTerm, searchBy);
     }
 
     @PutMapping("/profile/{userId}")

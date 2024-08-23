@@ -1,6 +1,7 @@
 package com.mmp.beacon.beacon.domain.repository;
 
 import com.mmp.beacon.beacon.domain.Beacon;
+import com.mmp.beacon.user.domain.AbstractUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,4 +35,12 @@ public interface BeaconRepository extends JpaRepository<Beacon, Long> {
      * @return 소프트 삭제되지 않은 비콘의 페이지
      */
     Page<Beacon> findAllByIsDeletedFalse(Pageable pageable);
+
+    /**
+     * 소프트 삭제되지 않은 비콘을 사용자로 찾습니다.
+     *
+     * @param user 사용자
+     * @return 소프트 삭제되지 않은 비콘
+     */
+    Optional<Beacon> findByUserAndIsDeletedFalse(AbstractUser user);
 }
