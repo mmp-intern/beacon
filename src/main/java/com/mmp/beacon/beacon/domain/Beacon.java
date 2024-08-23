@@ -33,4 +33,7 @@ public class Beacon extends BaseEntity {
         this.macAddr = macAddr;
     }
 
+    // 사용자와 비콘을 연결하는 명시적인 메서드
+    public void assignUser(User user) {this.user = user;}
+
 }

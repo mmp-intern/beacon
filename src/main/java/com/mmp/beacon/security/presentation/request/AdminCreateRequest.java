@@ -15,7 +15,5 @@ public class AdminCreateRequest {
     @NotBlank(message = "비밀번호를 입력해 주세요.")
     private String password;
 
-    @NotBlank(message = "회사를 입력해 주세요.")
-    private String company;
-
 }
+

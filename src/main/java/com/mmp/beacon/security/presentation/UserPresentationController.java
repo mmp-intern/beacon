@@ -5,6 +5,7 @@ import com.mmp.beacon.security.application.UserApplicationService;
 import com.mmp.beacon.security.presentation.request.AdminCreateRequest;
 import com.mmp.beacon.security.presentation.request.CreateUserRequest;
 import com.mmp.beacon.security.presentation.request.LoginRequest;
+import com.mmp.beacon.security.presentation.request.UpdateUserRequest;
 import com.mmp.beacon.security.query.response.UserProfileResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,6 +21,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
 
 import java.util.Map;
 
@@ -31,6 +33,28 @@ import java.util.Map;
 public class UserPresentationController {
 
     private final UserApplicationService userApplicationService;
+
+    @GetMapping("/getusers")
+    public Page<UserProfileResponse> getUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false, defaultValue = "id") String searchBy) {
+        return userApplicationService.getAllUsers(page, size, searchTerm, searchBy);
+    }
+
+    @PutMapping("/profile/{userId}")
+    public ResponseEntity<String> updateUserProfile(
+            @PathVariable String userId,
+            @Valid @RequestBody UpdateUserRequest request) {
+        try {
+            userApplicationService.updateUserProfile(userId, request);
+            return ResponseEntity.ok("프로필 업데이트 성공");
+        } catch (Exception e) {
+            log.error("프로필 업데이트 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("업데이트 실패: " + e.getMessage());
+        }
+    }
 
     @PostMapping("/users")
     public ResponseEntity<String> createUser(@Valid @RequestBody CreateUserRequest userDto) {

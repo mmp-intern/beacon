@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import com.mmp.beacon.beacon.domain.Beacon;
+
 
 @Getter
 @Entity
@@ -35,5 +37,13 @@ public class User extends AbstractUser {
         this.phone = phone;
         this.position = position;
         this.company = company;
+    }
+
+    public void updateProfile(String name, String email, String phone, String position, Beacon beacon) {
+        if (name != null) this.name = name;
+        if (email != null) this.email = email;
+        if (phone != null) this.phone = phone;
+        if (position != null) this.position = position;
+        if (beacon != null) beacon.assignUser((User) this);
     }
 }
