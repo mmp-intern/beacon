@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import java.util.List;
 
 @Getter
 public class CreateUserRequest {
@@ -30,5 +31,5 @@ public class CreateUserRequest {
     @NotBlank(message = "직책을 입력해 주세요.")
     private String position;
 
-    private String beaconId;
+    private List<String> beaconIds;
 }

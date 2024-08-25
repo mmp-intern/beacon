@@ -6,7 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import com.mmp.beacon.beacon.domain.Beacon;
-
+import java.util.List;
 
 @Getter
 @Entity
@@ -39,11 +39,15 @@ public class User extends AbstractUser {
         this.company = company;
     }
 
-    public void updateProfile(String name, String email, String phone, String position, Beacon beacon) {
+    public void updateProfile(String name, String email, String phone, String position, List<Beacon> beacons) {
         if (name != null) this.name = name;
         if (email != null) this.email = email;
         if (phone != null) this.phone = phone;
         if (position != null) this.position = position;
-        if (beacon != null) beacon.assignUser((User) this);
+        if (beacons != null) {
+            for (Beacon beacon : beacons) {
+                beacon.assignUser(this);
+            }
+        }
     }
 }
