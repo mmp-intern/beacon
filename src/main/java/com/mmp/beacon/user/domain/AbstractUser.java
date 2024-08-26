@@ -2,10 +2,7 @@ package com.mmp.beacon.user.domain;
 
 import com.mmp.beacon.global.domain.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -45,7 +42,9 @@ public class AbstractUser extends BaseEntity {
         this.role = role;
     }
 
-
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
 }
 

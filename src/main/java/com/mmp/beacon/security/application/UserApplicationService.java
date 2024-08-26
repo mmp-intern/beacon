@@ -11,6 +11,7 @@ import com.mmp.beacon.security.provider.JwtTokenProvider;
 import com.mmp.beacon.security.query.response.UserProfileResponse;
 import com.mmp.beacon.user.domain.*;
 import com.mmp.beacon.user.domain.repository.AbstractUserRepository;
+import com.mmp.beacon.user.domain.repository.AdminRepository;
 import com.mmp.beacon.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class UserApplicationService {
 
     private static final Long FIXED_COMPANY_ID = 1L; // 고정된 회사 ID
 
+    private final AdminRepository adminRepository;
     private final UserRepository userRepository;
     private final AbstractUserRepository abstractUserRepository; // 사용자 저장소에 접근하기 위한 객체
     private final BCryptPasswordEncoder bCryptPasswordEncoder; // 비밀번호 암호화를 위한 객체
@@ -87,12 +89,18 @@ public class UserApplicationService {
                 }
             }
 
+            // 비밀번호 암호화 및 사용자 프로필 업데이트
+            String encPassword = request.getPassword() != null && !request.getPassword().isEmpty()
+                    ? bCryptPasswordEncoder.encode(request.getPassword())
+                    : null;
+
             // 사용자 프로필 업데이트
             ((User) user).updateProfile(
                     request.getName(),
                     request.getEmail(),
                     request.getPhone(),
                     request.getPosition(),
+                    encPassword,
                     newBeacons.isEmpty() ? null : newBeacons // 연결된 비콘이 없으면 null 전달
             );
             abstractUserRepository.save(user);
@@ -101,6 +109,23 @@ public class UserApplicationService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public Page<UserProfileResponse> getAllAdmins(int page, int size, String searchTerm, String searchBy) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Admin> adminPage;
+
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            if ("id".equalsIgnoreCase(searchBy)) {
+                adminPage = adminRepository.findByUserIdContainingAndIsDeletedFalse(searchTerm, pageable);
+            } else {
+                throw new IllegalArgumentException("Invalid searchBy parameter. Must be 'id'.");
+            }
+        } else {
+            adminPage = adminRepository.findAllByIsDeletedFalse(pageable);
+        }
+
+        return adminPage.map(this::createUserProfileResponse);
+    }
 
     @Transactional(readOnly = true)
     public Page<UserProfileResponse> getAllUsers(int page, int size, String searchTerm, String searchBy) {

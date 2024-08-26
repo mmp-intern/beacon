@@ -1,6 +1,9 @@
 package com.mmp.beacon.user.domain.repository;
 
 import com.mmp.beacon.user.domain.Admin;
+import com.mmp.beacon.user.domain.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,4 +19,8 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
      * @return 소프트 삭제되지 않은 관리자 목록
      */
     List<Admin> findByCompanyIdAndIsDeletedFalse(Long companyId);
+
+    Page<Admin> findByUserIdContainingAndIsDeletedFalse(String userId, Pageable pageable);
+
+    Page<Admin> findAllByIsDeletedFalse(Pageable pageable);
 }

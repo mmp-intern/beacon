@@ -39,10 +39,11 @@ public class User extends AbstractUser {
         this.company = company;
     }
 
-    public void updateProfile(String name, String email, String phone, String position, List<Beacon> beacons) {
+    public void updateProfile(String name, String email, String phone, String position, String password, List<Beacon> beacons) {
         if (name != null) this.name = name;
         if (email != null) this.email = email;
         if (phone != null) this.phone = phone;
+        if (password != null) setPassword(password);
         if (position != null) this.position = position;
         if (beacons != null) {
             for (Beacon beacon : beacons) {

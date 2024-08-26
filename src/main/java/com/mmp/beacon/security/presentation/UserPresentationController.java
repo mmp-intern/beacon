@@ -43,6 +43,15 @@ public class UserPresentationController {
         return userApplicationService.getAllUsers(page, size, searchTerm, searchBy);
     }
 
+    @GetMapping("/getadmins")
+    public Page<UserProfileResponse> getAdmins(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false, defaultValue = "id") String searchBy) {
+        return userApplicationService.getAllAdmins(page, size, searchTerm, searchBy);
+    }
+
     @PutMapping("/profile/{userId}")
     public ResponseEntity<String> updateUserProfile(
             @PathVariable String userId,
