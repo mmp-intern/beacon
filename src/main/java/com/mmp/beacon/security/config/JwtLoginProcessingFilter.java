@@ -12,8 +12,6 @@ public class JwtLoginProcessingFilter extends UsernamePasswordAuthenticationFilt
 
     private final ObjectMapper objectMapper;
 
-    // @RequiredArgsConstructor로 인해 ObjectMapper를 받는 생성자가 자동으로 생성됩니다.
-
     public void setAuthenticationManager(AuthenticationManager authenticationManager) {
         super.setAuthenticationManager(authenticationManager);
     }

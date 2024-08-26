@@ -45,42 +45,39 @@ public class UserApplicationService {
 
     private final AdminRepository adminRepository;
     private final UserRepository userRepository;
-    private final AbstractUserRepository abstractUserRepository; // 사용자 저장소에 접근하기 위한 객체
-    private final BCryptPasswordEncoder bCryptPasswordEncoder; // 비밀번호 암호화를 위한 객체
-    private final JwtTokenProvider jwtTokenProvider; // JWT 토큰 생성을 위한 객체
-    private final CompanyRepository companyRepository; // 회사 저장소에 접근하기 위한 객체
-    private final BeaconRepository beaconRepository; // 회사 저장소에 접근하기 위한 객체
-    private final Map<String, String> refreshTokenStore = new HashMap<>(); // 리프레시 토큰 저장소
+    private final AbstractUserRepository abstractUserRepository;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final CompanyRepository companyRepository;
+    private final BeaconRepository beaconRepository;
+    private final Map<String, String> refreshTokenStore = new HashMap<>();
 
-    // 현재 인증된 사용자 정보를 반환하는 메서드
+    // 현재 인증된 사용자 정보를 반환
     public AbstractUser getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication(); // 현재 인증 정보를 가져옴
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails) {
-            CustomUserDetails userDetail = (CustomUserDetails) auth.getPrincipal(); // 사용자 세부 정보를 가져옴
+            CustomUserDetails userDetail = (CustomUserDetails) auth.getPrincipal();
             return abstractUserRepository.findByUserIdAndIsDeletedFalse(userDetail.getUsername())
-                    .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다.")); // 사용자 ID로 사용자 정보를 조회
+                    .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
         }
-        return null; // 인증되지 않은 경우 null 반환
+        return null;
     }
 
     @Transactional
     public void updateUserProfile(String userId, UpdateUserRequest request) {
         AbstractUser user = abstractUserRepository.findByUserIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
 
         if (user instanceof User) {
             List<Beacon> newBeacons = new ArrayList<>();
-            // 기존에 사용자와 연결된 모든 비콘들의 연결을 해제
             List<Beacon> currentBeacons = beaconRepository.findByUserAndIsDeletedFalse((User) user);
             for (Beacon beacon : currentBeacons) {
-                beacon.assignUser(null); // 비콘의 사용자 연결 해제
+                beacon.assignUser(null);
                 beaconRepository.save(beacon);
             }
 
-            // 새로 입력된 비콘들을 연결
             if (request.getMacAddr() != null && !request.getMacAddr().isEmpty()) {
-                for (String macAddr : request.getMacAddr()) { // request.getMacAddr()는 List<String> 또는 String[] 타입이어야 함
+                for (String macAddr : request.getMacAddr()) {
                     Beacon beacon = beaconRepository.findByMacAddrAndIsDeletedFalse(macAddr)
                             .orElseThrow(() -> new IllegalArgumentException("비콘을 찾을 수 없습니다."));
 
@@ -90,23 +87,21 @@ public class UserApplicationService {
                 }
             }
 
-            // 비밀번호 암호화 및 사용자 프로필 업데이트
             String encPassword = request.getPassword() != null && !request.getPassword().isEmpty()
                     ? bCryptPasswordEncoder.encode(request.getPassword())
                     : null;
 
-            // 사용자 프로필 업데이트
             ((User) user).updateProfile(
                     request.getName(),
                     request.getEmail(),
                     request.getPhone(),
                     request.getPosition(),
                     encPassword,
-                    newBeacons.isEmpty() ? null : newBeacons // 연결된 비콘이 없으면 null 전달
+                    newBeacons.isEmpty() ? null : newBeacons
             );
             abstractUserRepository.save(user);
         } else {
-            throw new IllegalArgumentException("User type is not supported for profile update");
+            throw new IllegalArgumentException("지원되지 않는 사용자 유형입니다.");
         }
     }
 
@@ -119,7 +114,7 @@ public class UserApplicationService {
             if ("id".equalsIgnoreCase(searchBy)) {
                 adminPage = adminRepository.findByUserIdContainingAndIsDeletedFalse(searchTerm, pageable);
             } else {
-                throw new IllegalArgumentException("Invalid searchBy parameter. Must be 'id'.");
+                throw new IllegalArgumentException("유효하지 않은 검색 기준입니다. 'id'만 허용됩니다.");
             }
         } else {
             adminPage = adminRepository.findAllByIsDeletedFalse(pageable);
@@ -139,7 +134,7 @@ public class UserApplicationService {
             } else if ("name".equalsIgnoreCase(searchBy)) {
                 userPage = userRepository.findByNameContainingAndIsDeletedFalse(searchTerm, pageable);
             } else {
-                throw new IllegalArgumentException("Invalid searchBy parameter. Must be 'id' or 'name'.");
+                throw new IllegalArgumentException("유효하지 않은 검색 기준입니다. 'id' 또는 'name'만 허용됩니다.");
             }
         } else {
             userPage = userRepository.findAllByIsDeletedFalse(pageable);
@@ -148,25 +143,20 @@ public class UserApplicationService {
         return userPage.map(this::createUserProfileResponse);
     }
 
-
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(String userId) {
-        AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
+        AbstractUser currentUser = getCurrentUser();
         AbstractUser user = abstractUserRepository.findByUserIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("ID가 " + userId + "인 사용자를 찾을 수 없습니다.")); // 사용자 ID로 사용자 정보를 조회
+                .orElseThrow(() -> new UsernameNotFoundException("ID가 " + userId + "인 사용자를 찾을 수 없습니다."));
 
-        // 조회하는 사람 A, 조회되는 사람 B
-        // A와 B가 동일 인물일 경우 조회 가능
         if (currentUser.getUserId().equals(user.getUserId())) {
             return createUserProfileResponse(user);
         }
 
-        // A가 SuperAdmin일 경우 조회 가능
         if (currentUser.getRole() == UserRole.SUPER_ADMIN) {
             return createUserProfileResponse(user);
         }
 
-        // A가 Admin/User일 경우 B가 User이고 A와 B가 같은 회사일 경우 조회 가능
         if (currentUser.getRole() == UserRole.ADMIN || currentUser.getRole() == UserRole.USER) {
             if (user.getRole() == UserRole.USER) {
                 Company currentUserCompany = getUserCompany(currentUser);
@@ -180,7 +170,6 @@ public class UserApplicationService {
         throw new IllegalArgumentException("같은 회사의 사용자만 조회할 수 있습니다.");
     }
 
-    // 사용자의 회사 정보를 반환하는 메서드
     private Company getUserCompany(AbstractUser user) {
         return companyRepository.findByIdAndIsDeletedFalse(FIXED_COMPANY_ID)
                 .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
@@ -197,15 +186,12 @@ public class UserApplicationService {
                 throw new IllegalArgumentException("인증이 필요합니다.");
             }
 
-            // 고정된 회사 정보를 가져옴
             Company company = companyRepository.findByIdAndIsDeletedFalse(FIXED_COMPANY_ID)
                     .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
 
-            // 사용자 생성 시 회사 정보 포함
             AbstractUser user = new User(userDto.getUserId(), encPassword, role, company, userDto.getName(), userDto.getEmail(), userDto.getPhone(), userDto.getPosition());
             abstractUserRepository.save(user);
 
-            // 여러 비콘을 사용자가 선택할 수 있도록 수정
             if (userDto.getBeaconIds() != null && !userDto.getBeaconIds().isEmpty()) {
                 for (String beaconIdStr : userDto.getBeaconIds()) {
                     Long beaconId = Long.parseLong(beaconIdStr);
@@ -213,7 +199,6 @@ public class UserApplicationService {
                             .filter(b -> b.getUser() == null || b.getUser().equals(user))
                             .orElseThrow(() -> new IllegalArgumentException("비콘을 찾을 수 없습니다."));
 
-                    // 비콘과 사용자 연결
                     beacon.assignUser((User) user);
                     beaconRepository.save(beacon);
                 }
@@ -229,43 +214,39 @@ public class UserApplicationService {
         }
     }
 
-
-    // 새로운 관리자를 등록하는 메서드
     @Transactional
     public void registerAdmin(AdminCreateRequest adminDto) {
-        String encPassword = bCryptPasswordEncoder.encode(adminDto.getPassword()); // 비밀번호 암호화
-        UserRole role = UserRole.ADMIN; // 역할을 항상 ADMIN으로 지정
+        String encPassword = bCryptPasswordEncoder.encode(adminDto.getPassword());
+        UserRole role = UserRole.ADMIN;
 
-        AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
+        AbstractUser currentUser = getCurrentUser();
         if (currentUser == null) {
             throw new IllegalArgumentException("인증이 필요합니다.");
         }
 
         Company company = companyRepository.findByIdAndIsDeletedFalse(FIXED_COMPANY_ID)
-                .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다.")); // 고정된 회사 ID로 회사 조회
+                .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
 
-        AbstractUser user = new Admin(adminDto.getUserId(), encPassword, role, company); // 새로운 관리자 객체 생성
+        AbstractUser user = new Admin(adminDto.getUserId(), encPassword, role, company);
 
-        abstractUserRepository.save(user); // 관리자 저장
+        abstractUserRepository.save(user);
         log.info("관리자 등록 성공: {}", adminDto.getUserId());
     }
 
-    // 사용자를 인증하는 메서드
     @Transactional
     public Map<String, String> authenticate(LoginRequest userDto) {
         log.info("사용자 인증 중: {}", userDto.getUserId());
-        // is_deleted가 false인 사용자만 조회
         Optional<AbstractUser> userOpt = abstractUserRepository.findByUserIdAndIsDeletedFalse(userDto.getUserId());
 
         if (userOpt.isPresent() && bCryptPasswordEncoder.matches(userDto.getPassword(), userOpt.get().getPassword())) {
             AbstractUser user = userOpt.get();
-            Authentication auth = new UsernamePasswordAuthenticationToken(new CustomUserDetails(user), null, user.getAuthorities()); // 인증 토큰 생성
-            SecurityContextHolder.getContext().setAuthentication(auth); // 인증 정보를 보안 컨텍스트에 설정
+            Authentication auth = new UsernamePasswordAuthenticationToken(new CustomUserDetails(user), null, user.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
 
-            String accessToken = jwtTokenProvider.generateToken((CustomUserDetails) auth.getPrincipal()); // 액세스 토큰 생성
-            String refreshToken = jwtTokenProvider.generateRefreshToken((CustomUserDetails) auth.getPrincipal()); // 리프레시 토큰 생성
+            String accessToken = jwtTokenProvider.generateToken((CustomUserDetails) auth.getPrincipal());
+            String refreshToken = jwtTokenProvider.generateRefreshToken((CustomUserDetails) auth.getPrincipal());
 
-            refreshTokenStore.put(user.getUserId(), refreshToken); // 리프레시 토큰 저장
+            refreshTokenStore.put(user.getUserId(), refreshToken);
 
             log.info("인증 성공: {}", user.getUserId());
             Map<String, String> tokens = new HashMap<>();
@@ -278,37 +259,35 @@ public class UserApplicationService {
         return null;
     }
 
-    // 리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급하는 메서드
     public String refreshAccessToken(String refreshToken) {
         if (jwtTokenProvider.validateToken(refreshToken)) {
-            String username = jwtTokenProvider.getUsernameFromToken(refreshToken); // 리프레시 토큰에서 사용자 이름을 추출
+            String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
             String storedRefreshToken = refreshTokenStore.get(username);
 
             if (storedRefreshToken != null && storedRefreshToken.equals(refreshToken)) {
                 Optional<AbstractUser> userOpt = abstractUserRepository.findByUserIdAndIsDeletedFalse(username);
                 if (userOpt.isPresent()) {
-                    return jwtTokenProvider.generateToken(new CustomUserDetails(userOpt.get())); // 새로운 액세스 토큰 발급
+                    return jwtTokenProvider.generateToken(new CustomUserDetails(userOpt.get()));
                 }
             }
         }
         throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
     }
 
-    // 사용자를 삭제하는 메서드
     @Transactional
     public void deleteUser(String userId) {
-        AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
+        AbstractUser currentUser = getCurrentUser();
         if (currentUser == null) {
             throw new IllegalArgumentException("인증이 필요합니다.");
         }
 
-        UserRole currentUserRole = currentUser.getRole(); // 현재 사용자의 역할을 가져옴
+        UserRole currentUserRole = currentUser.getRole();
         if (currentUserRole != UserRole.SUPER_ADMIN && currentUserRole != UserRole.ADMIN) {
             throw new IllegalArgumentException("권한이 부족합니다: 사용자를 삭제할 수 없습니다.");
         }
 
         AbstractUser userToDelete = abstractUserRepository.findByUserIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다.")); // 사용자 ID로 삭제할 사용자 정보를 조회
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
         log.info("삭제 요청된 사용자 ID: {}", userId);
         if (currentUserRole == UserRole.ADMIN) {
             if (userToDelete.getRole() != UserRole.USER) {
@@ -324,12 +303,11 @@ public class UserApplicationService {
             }
         }
 
-        userToDelete.delete(); // 소프트 삭제
+        userToDelete.delete();
         abstractUserRepository.save(userToDelete);
         log.info("사용자 삭제 성공: {}", userId);
     }
 
-    // 사용자 프로필 응답을 생성하는 메서드
     private UserProfileResponse createUserProfileResponse(AbstractUser user) {
         List<Long> beaconIds = null;
         List<String> macAddrs = new ArrayList<>();
@@ -389,7 +367,7 @@ public class UserApplicationService {
                     null
             );
         } else {
-            return null; // Return null if the user type is unknown
+            return null;
         }
     }
 }
