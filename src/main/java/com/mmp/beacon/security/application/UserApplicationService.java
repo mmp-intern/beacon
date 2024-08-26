@@ -27,6 +27,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.mmp.beacon.beacon.domain.Beacon;
+
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 
@@ -297,8 +298,6 @@ public class UserApplicationService {
     @Transactional
     public void deleteUser(String userId) {
         AbstractUser currentUser = getCurrentUser(); // 현재 사용자 정보를 가져옴
-        log.info("Current User: {}", currentUser.getUserId());
-        log.info("Deleting User with ID: {}", userId);  // 여기서 전달된 userId를 로그로 확인합니다.
         if (currentUser == null) {
             throw new IllegalArgumentException("인증이 필요합니다.");
         }
@@ -314,6 +313,14 @@ public class UserApplicationService {
         if (currentUserRole == UserRole.ADMIN) {
             if (userToDelete.getRole() != UserRole.USER) {
                 throw new IllegalArgumentException("권한이 부족합니다: 이 사용자를 삭제할 수 없습니다.");
+            }
+        }
+
+        if (userToDelete instanceof User) {
+            List<Beacon> userBeacons = beaconRepository.findByUserAndIsDeletedFalse((User) userToDelete);
+            for (Beacon beacon : userBeacons) {
+                beacon.assignUser(null);
+                beaconRepository.save(beacon);
             }
         }
 
