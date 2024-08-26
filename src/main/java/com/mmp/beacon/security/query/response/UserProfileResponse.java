@@ -17,7 +17,7 @@ public class UserProfileResponse {
     private Long companyId;
     private String company;
     private String role;
-    private Long beaconId;
+    private List<Long> beaconIds;
     private List<String> macAddr;
 
 }

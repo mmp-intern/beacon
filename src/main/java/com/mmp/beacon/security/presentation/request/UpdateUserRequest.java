@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import java.util.List;
 
 @Getter
 public class UpdateUserRequest {
@@ -21,5 +22,7 @@ public class UpdateUserRequest {
     @Size(max = 255, message = "직책은 255자를 넘을 수 없습니다.")
     private String position;
 
-    private String macAddr;
+    private String password;
+
+    private List<String> macAddr;
 }

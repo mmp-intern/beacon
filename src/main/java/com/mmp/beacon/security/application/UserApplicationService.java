@@ -11,6 +11,7 @@ import com.mmp.beacon.security.provider.JwtTokenProvider;
 import com.mmp.beacon.security.query.response.UserProfileResponse;
 import com.mmp.beacon.user.domain.*;
 import com.mmp.beacon.user.domain.repository.AbstractUserRepository;
+import com.mmp.beacon.user.domain.repository.AdminRepository;
 import com.mmp.beacon.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.mmp.beacon.beacon.domain.Beacon;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +42,7 @@ public class UserApplicationService {
 
     private static final Long FIXED_COMPANY_ID = 1L; // 고정된 회사 ID
 
+    private final AdminRepository adminRepository;
     private final UserRepository userRepository;
     private final AbstractUserRepository abstractUserRepository; // 사용자 저장소에 접근하기 위한 객체
     private final BCryptPasswordEncoder bCryptPasswordEncoder; // 비밀번호 암호화를 위한 객체
@@ -63,19 +67,41 @@ public class UserApplicationService {
         AbstractUser user = abstractUserRepository.findByUserIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+
         if (user instanceof User) {
-            Beacon beacon = request.getMacAddr() != null
-                    ? beaconRepository.findByMacAddrAndIsDeletedFalse(request.getMacAddr())
-                    .filter(b -> b.getUser() == null || b.getUser().equals(user))
-                    .orElse(null)
+            List<Beacon> newBeacons = new ArrayList<>();
+            // 기존에 사용자와 연결된 모든 비콘들의 연결을 해제
+            List<Beacon> currentBeacons = beaconRepository.findByUserAndIsDeletedFalse((User) user);
+            for (Beacon beacon : currentBeacons) {
+                beacon.assignUser(null); // 비콘의 사용자 연결 해제
+                beaconRepository.save(beacon);
+            }
+
+            // 새로 입력된 비콘들을 연결
+            if (request.getMacAddr() != null && !request.getMacAddr().isEmpty()) {
+                for (String macAddr : request.getMacAddr()) { // request.getMacAddr()는 List<String> 또는 String[] 타입이어야 함
+                    Beacon beacon = beaconRepository.findByMacAddrAndIsDeletedFalse(macAddr)
+                            .orElseThrow(() -> new IllegalArgumentException("비콘을 찾을 수 없습니다."));
+
+                    beacon.assignUser((User) user);
+                    beaconRepository.save(beacon);
+                    newBeacons.add(beacon);
+                }
+            }
+
+            // 비밀번호 암호화 및 사용자 프로필 업데이트
+            String encPassword = request.getPassword() != null && !request.getPassword().isEmpty()
+                    ? bCryptPasswordEncoder.encode(request.getPassword())
                     : null;
 
+            // 사용자 프로필 업데이트
             ((User) user).updateProfile(
                     request.getName(),
                     request.getEmail(),
                     request.getPhone(),
                     request.getPosition(),
-                    beacon
+                    encPassword,
+                    newBeacons.isEmpty() ? null : newBeacons // 연결된 비콘이 없으면 null 전달
             );
             abstractUserRepository.save(user);
         } else {
@@ -83,6 +109,23 @@ public class UserApplicationService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public Page<UserProfileResponse> getAllAdmins(int page, int size, String searchTerm, String searchBy) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Admin> adminPage;
+
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            if ("id".equalsIgnoreCase(searchBy)) {
+                adminPage = adminRepository.findByUserIdContainingAndIsDeletedFalse(searchTerm, pageable);
+            } else {
+                throw new IllegalArgumentException("Invalid searchBy parameter. Must be 'id'.");
+            }
+        } else {
+            adminPage = adminRepository.findAllByIsDeletedFalse(pageable);
+        }
+
+        return adminPage.map(this::createUserProfileResponse);
+    }
 
     @Transactional(readOnly = true)
     public Page<UserProfileResponse> getAllUsers(int page, int size, String searchTerm, String searchBy) {
@@ -161,14 +204,18 @@ public class UserApplicationService {
             AbstractUser user = new User(userDto.getUserId(), encPassword, role, company, userDto.getName(), userDto.getEmail(), userDto.getPhone(), userDto.getPosition());
             abstractUserRepository.save(user);
 
-            if (userDto.getBeaconId() != null && !userDto.getBeaconId().isEmpty()) {
-                Beacon beacon = beaconRepository.findByIdAndIsDeletedFalse(Long.parseLong(userDto.getBeaconId()))
-                        .filter(b -> b.getUser() == null || b.getUser().equals(user))
-                        .orElseThrow(() -> new IllegalArgumentException("비콘을 찾을 수 없습니다."));
+            // 여러 비콘을 사용자가 선택할 수 있도록 수정
+            if (userDto.getBeaconIds() != null && !userDto.getBeaconIds().isEmpty()) {
+                for (String beaconIdStr : userDto.getBeaconIds()) {
+                    Long beaconId = Long.parseLong(beaconIdStr);
+                    Beacon beacon = beaconRepository.findByIdAndIsDeletedFalse(beaconId)
+                            .filter(b -> b.getUser() == null || b.getUser().equals(user))
+                            .orElseThrow(() -> new IllegalArgumentException("비콘을 찾을 수 없습니다."));
 
-                // 비콘과 사용자 연결
-                beacon.assignUser((User) user);
-                beaconRepository.save(beacon);
+                    // 비콘과 사용자 연결
+                    beacon.assignUser((User) user);
+                    beaconRepository.save(beacon);
+                }
             }
 
             log.info("사용자 등록 성공: {}", userDto.getUserId());
@@ -277,14 +324,19 @@ public class UserApplicationService {
 
     // 사용자 프로필 응답을 생성하는 메서드
     private UserProfileResponse createUserProfileResponse(AbstractUser user) {
-        Beacon beacon = null;
+        List<Long> beaconIds = null;
+        List<String> macAddrs = new ArrayList<>();
         if (user instanceof User) {
             User specificUser = (User) user;
 
-            // Fetch the beacon associated with the user, if any
-            Optional<Beacon> beaconOpt = beaconRepository.findByUserAndIsDeletedFalse(specificUser);
-            if (beaconOpt.isPresent()) {
-                beacon = beaconOpt.get();
+            List<Beacon> beacons = beaconRepository.findByUserAndIsDeletedFalse(specificUser);
+            if (!beacons.isEmpty()) {
+                beaconIds = beacons.stream()
+                        .map(Beacon::getId)
+                        .collect(Collectors.toList());
+                macAddrs = beacons.stream()
+                        .map(Beacon::getMacAddr)
+                        .collect(Collectors.toList());
             }
 
             return new UserProfileResponse(
@@ -297,8 +349,8 @@ public class UserApplicationService {
                     FIXED_COMPANY_ID,
                     specificUser.getCompany().getName(),
                     user.getRole().name(),
-                    beacon != null ? beacon.getId() : null,  // Beacon ID
-                    beacon != null ? List.of(beacon.getMacAddr()) : null  // Beacon MAC Address
+                    beaconIds,
+                    !macAddrs.isEmpty() ? macAddrs : null
             );
         } else if (user instanceof Admin) {
             Admin specificAdmin = (Admin) user;
