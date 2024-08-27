@@ -14,7 +14,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry
                 .addMapping("/**")
                 .allowedHeaders("*")
-                .allowedOrigins("http://localhost:3000")
+                .allowedOrigins("http://mmpverse.cafe24.com")
                 .allowedMethods("*");
     }
 }
