@@ -22,6 +22,7 @@ public class UpdateUserRequest {
     @Size(max = 255, message = "직책은 255자를 넘을 수 없습니다.")
     private String position;
 
+    @Size(min = 5, max = 255, message = "비밀번호는 5자에서 255자 사이여야 합니다.")
     private String password;
 
     private List<String> macAddr;
