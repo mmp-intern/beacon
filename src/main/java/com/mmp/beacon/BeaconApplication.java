@@ -8,12 +8,13 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-public class BeaconApplication extends SpringBootServletInitializer {
+public class BeaconApplication {
 
+/*  extends SpringBootServletInitializer
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
         return application.sources(BeaconApplication.class);
-    }
+    }*/
 
     public static void main(String[] args) {
         SpringApplication.run(BeaconApplication.class, args);
