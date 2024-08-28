@@ -20,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import com.mmp.beacon.security.token.JwtAuthenticationEntryPoint;
 
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AbstractUserRepository abstractUserRepository;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -53,7 +55,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/beacons/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/v1/commutes/**").hasAnyAuthority("SUPER_ADMIN", "ADMIN", "USER")
                         .requestMatchers("/ws/beacon/**").permitAll()
-                        .anyRequest().authenticated());
+                        .requestMatchers("/api/v1/refresh").permitAll()
+                        .anyRequest().authenticated()) // 여기까지가 `authorizeHttpRequests` 블록입니다.
+                .securityContext(securityContext -> securityContext
+                        .requireExplicitSave(false)
+                )
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                );
+
 
         http.addFilterBefore(loginProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
