@@ -10,7 +10,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
+import io.jsonwebtoken.ExpiredJwtException;
 import java.security.Key;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -24,11 +24,10 @@ import static java.time.ZoneId.systemDefault;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
-
     private static final String TOKEN_HEADER_PREFIX = "Bearer ";
     private static final String ISSUER = "http://localhost";
-    private static final int ACCESS_VALID_HOUR = 96;  // access토큰 만료시간 4일
-    private static final int REFRESH_VALID_DAYS = 4; // 리프레시토큰 만료시간 4일
+    private static final int ACCESS_VALID_SECONDS = 24 * 60 * 60; // 1일
+    private static final int REFRESH_VALID_SECONDS = 7 * 24 * 60 * 60; // 7일
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -40,10 +39,11 @@ public class JwtTokenProvider {
         signingKey = Keys.hmacShaKeyFor(encodedSecretKey(secretKey).getBytes(UTF_8));
     }
 
+
     // JWT 토큰 생성 메서드
     public String generateToken(CustomUserDetails userDetails) {
         Date now = new Date();
-        Date expiryDate = getAtExpireTimeFrom(now, ACCESS_VALID_HOUR);
+        Date expiryDate = new Date(now.getTime() + ACCESS_VALID_SECONDS * 1000);
 
         return Jwts.builder()
                 .setHeader(getDefaultHeader())
@@ -57,10 +57,11 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+
     // JWT 리프레시 토큰 생성 메서드
     public String generateRefreshToken(CustomUserDetails userDetails) {
         Date now = new Date();
-        Date expiryDate = getAtExpireTimeFrom(now, REFRESH_VALID_DAYS * 24);  // Calculate in days
+        Date expiryDate = new Date(now.getTime() + REFRESH_VALID_SECONDS * 1000);
 
         return Jwts.builder()
                 .setHeader(getDefaultHeader())
@@ -77,6 +78,8 @@ public class JwtTokenProvider {
         try {
             Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(removePrefix(token));
             return true;
+        } catch (ExpiredJwtException e) {
+            throw e; // 토큰 만료 시 예외를 던짐
         } catch (Exception e) {
             return false;
         }

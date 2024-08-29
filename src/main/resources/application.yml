@@ -27,4 +27,3 @@ logging:
 # JWT 관련 설정
 jwt:
   secret: your_very_long_secret_key_that_is_at_least_256_bits_long  # JWT 비밀 키
-  expiration: 86400000  # JWT 만료 시간 (밀리초 기준, 여기서는 1일)

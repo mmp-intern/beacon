@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 
 import java.util.Map;
+import java.util.HashMap;
 
 @Slf4j
 @RestController
@@ -188,16 +189,29 @@ public class UserPresentationController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<String> refreshToken(@RequestBody Map<String, String> request) {
-        String refreshToken = request.get("refreshToken");
-        if (refreshToken == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Refresh Token이 필요합니다.");
+    public ResponseEntity<Map<String, String>> refreshToken(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Refresh Token이 필요합니다."));
         }
+
+        String refreshToken = authHeader.substring(7);
+
         try {
+            log.info("Attempting to refresh token for: {}", refreshToken);
             String newAccessToken = userApplicationService.refreshAccessToken(refreshToken);
-            return ResponseEntity.ok(newAccessToken);
+            log.info("Successfully refreshed token.");
+
+            // Access Token을 JSON 형태로 감싸서 반환
+            Map<String, String> response = new HashMap<>();
+            response.put("accessToken", newAccessToken);
+
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 Refresh Token입니다.");
+            log.error("Invalid Refresh Token: ", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "유효하지 않은 Refresh Token입니다."));
+        } catch (Exception e) {
+            log.error("An error occurred while processing the refresh token request: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "서버에서 알 수 없는 오류가 발생했습니다."));
         }
     }
 }

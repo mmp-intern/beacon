@@ -15,6 +15,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import io.jsonwebtoken.ExpiredJwtException;
+
 
 import java.io.IOException;
 
@@ -29,6 +31,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+        log.debug("Processing request URI: {}", requestURI);
+
+        // 리프레시 엔드포인트를 처리하지 않도록 설정
+        if ("/api/v1/refresh".equals(requestURI)) {
+            log.debug("Bypassing JWT filter for refresh endpoint.");
+            chain.doFilter(request, response);
+            return;
+        }
+
         final String requestTokenHeader = request.getHeader("Authorization");
 
         String username = null;
@@ -39,8 +52,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 username = jwtTokenProvider.getUsernameFromToken(jwtToken);
                 log.debug("Extracted username from JWT: {}", username);
+            } catch (ExpiredJwtException e) {
+                log.warn("JWT Token has expired, redirecting to refresh token flow.");
+                // Refresh 토큰 플로우로 넘기는 로직 추가
+                chain.doFilter(request, response);
+                return;
             } catch (Exception e) {
                 log.error("Error extracting JWT token", e);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token has expired");
+                return;
             }
         } else {
             log.warn("JWT token does not start with Bearer String: {}", requestTokenHeader);
